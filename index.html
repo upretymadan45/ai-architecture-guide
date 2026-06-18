@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise AI Platform Architecture</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── AMBIENT GLOW ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(59,130,246,.13);
+      border: 1px solid rgba(59,130,246,.3);
+      color: var(--blue-l);
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .hero-badge span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 8px var(--blue);
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 1.1rem; color: var(--t2);
+      max-width: 700px; margin: 0 auto 40px;
+    }
+
+    /* ── NAV ── */
+    .nav {
+      display: flex; flex-wrap: wrap;
+      justify-content: center; gap: 10px;
+      padding: 0 40px 44px;
+      position: relative; z-index: 1;
+    }
+
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500;
+      backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1);
+      transform: translateY(-2px);
+    }
+
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ── CONTAINER ── */
+    .wrap {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 40px 96px;
+      position: relative; z-index: 1;
+    }
+
+    /* ── SECTION ── */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+
+    .sec-eyebrow {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--blue); margin-bottom: 8px;
+    }
+
+    .sec-title {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700; color: var(--t1); margin-bottom: 10px;
+    }
+
+    .sec-sub {
+      font-size: 1rem; color: var(--t2);
+      max-width: 700px; margin-bottom: 32px;
+    }
+
+    /* ── COMPONENT GRID ── */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+
+    .comp-card {
+      background: rgba(59,130,246,.04);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: all .25s;
+    }
+
+    .comp-card:hover {
+      background: rgba(59,130,246,.09);
+      border-color: var(--border-h);
+      transform: translateY(-3px);
+    }
+
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+
+    .comp-name {
+      font-size: 13px; font-weight: 600; color: var(--t1); margin-bottom: 5px;
+    }
+
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+
+    /* ── STEPS ── */
+    .steps-block { margin-bottom: 28px; }
+
+    .steps-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--blue-l); margin-bottom: 14px;
+    }
+
+    .steps { display: flex; flex-direction: column; gap: 9px; }
+
+    .step {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 10px;
+    }
+
+    .step-n {
+      min-width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* ── DIAGRAM CARD ── */
+    .diagram-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color .25s;
+    }
+
+    .diagram-card:hover { border-color: var(--border-h); }
+
+    .diagram-lbl {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--t3); margin-bottom: 14px;
+    }
+
+    .diagram-box {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 24px;
+      overflow-x: auto;
+    }
+
+    /* ── TAGS ── */
+    .tags-block { margin-top: 24px; }
+
+    .tags-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--purple-l); margin-bottom: 12px;
+    }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .tag {
+      padding: 5px 13px; border-radius: 100px;
+      font-size: 12px; font-weight: 500; border: 1px solid;
+    }
+
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    /* ── DIVIDER ── */
+    .hr {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 60px 0;
+    }
+
+    /* ── SUMMARY ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .sum-card {
+      background: linear-gradient(135deg, var(--bg-card), rgba(13,31,56,.4));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      position: relative; overflow: hidden;
+    }
+
+    .sum-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+    }
+
+    .c1::before { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+    .c2::before { background: linear-gradient(90deg, var(--purple), var(--blue)); }
+    .c3::before { background: linear-gradient(90deg, var(--cyan), var(--emerald)); }
+    .c4::before { background: linear-gradient(90deg, var(--emerald), var(--amber)); }
+
+    .sum-card h3 { font-size: 15px; font-weight: 700; color: var(--t1); margin-bottom: 14px; }
+
+    .sum-card ul { list-style: none; }
+
+    .sum-card ul li {
+      font-size: 13px; color: var(--t2);
+      padding: 4px 0 4px 18px; position: relative;
+    }
+
+    .sum-card ul li::before {
+      content: '→'; position: absolute; left: 0; color: var(--blue-l);
+    }
+
+    .principle {
+      margin-top: 32px; padding: 30px;
+      background: linear-gradient(135deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+      border: 1px solid rgba(139,92,246,.25);
+      border-radius: 16px; text-align: center;
+    }
+
+    .principle .lbl {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--purple-l); margin-bottom: 12px;
+    }
+
+    .principle p {
+      font-size: 1.2rem; font-weight: 600;
+      background: linear-gradient(135deg, var(--blue-l), var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center; padding: 40px;
+      border-top: 1px solid var(--border);
+      color: var(--t3); font-size: 13px;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ HERO ════════════════ -->
+<div class="hero">
+  <div class="hero-badge"><span></span> AI Architecture Series</div>
+  <h1>Enterprise AI Platform<br>Architecture Guide</h1>
+  <p>
+    A visual deep-dive into how modern, production-grade AI platforms are designed —
+    from intelligent request routing and LLM orchestration to real-time ML inference
+    and continuous MLOps feedback loops.
+  </p>
+</div>
+
+<!-- ════════════════ NAV ════════════════ -->
+<div class="nav">
+  <a href="#runtime">  <span class="dot" style="background:#3b82f6"></span> Runtime Integration</a>
+  <a href="#reference"><span class="dot" style="background:#8b5cf6"></span> Reference Architecture</a>
+  <a href="#inference"><span class="dot" style="background:#06b6d4"></span> Online Prediction Flow</a>
+  <a href="#lifecycle"><span class="dot" style="background:#10b981"></span> MLOps Lifecycle</a>
+  <a href="#summary">  <span class="dot" style="background:#f59e0b"></span> Summary</a>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════════════════════════════════
+     TOPIC 01 — RUNTIME INTEGRATION
+══════════════════════════════════════════ -->
+<div class="section" id="runtime">
+  <div class="sec-eyebrow">Topic 01</div>
+  <div class="sec-title">AI Runtime Orchestration Architecture</div>
+  <div class="sec-sub">
+    How every user request flows through an intelligent gateway — classified, planned, and
+    dynamically routed to the right execution engine: a large language model, an external tool, or a trained ML model.
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🚪</div>
+      <div class="comp-name">AI Gateway</div>
+      <div class="comp-desc">The single entry point for all requests. Handles auth, rate-limiting, and input normalization before forwarding downstream.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧠</div>
+      <div class="comp-name">Intent Classifier</div>
+      <div class="comp-desc">Uses ML to label the user's goal — conversational answer, tool action, or prediction — before any work begins.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-name">Planner</div>
+      <div class="comp-desc">Decomposes complex or multi-step requests into an ordered sequence of subtasks, resolving dependencies between them.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔀</div>
+      <div class="comp-name">Execution Mode Selector</div>
+      <div class="comp-desc">Decides per-task whether to call an LLM, invoke an external tool/API, or run an ML model endpoint.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">💬</div>
+      <div class="comp-name">LLM Path (GPT / Gemini / Claude)</div>
+      <div class="comp-desc">Routes language tasks to the best-fit large language model. Supports multiple providers for cost and capability tradeoffs.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔧</div>
+      <div class="comp-name">Tool Path</div>
+      <div class="comp-desc">Executes structured actions via MCP Servers, REST APIs, or enterprise search engines to fetch or mutate real data.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚡</div>
+      <div class="comp-name">ML Path</div>
+      <div class="comp-desc">Calls Vertex AI endpoints or custom-deployed models for prediction, classification, or ranking tasks.</div>
+    </div>
+  </div>
+
+  <div class="steps-block">
+    <div class="steps-label">How It Works — Step by Step</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-txt"><strong>User Request →</strong> Enters via the <strong>AI Gateway</strong>, which validates identity, enforces quotas, and normalises the payload.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-txt"><strong>Classification →</strong> The <strong>Intent Classifier</strong> analyses the request to label it — e.g., "generate text", "fetch a record", or "run a prediction".</div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-txt"><strong>Planning →</strong> The <strong>Planner</strong> maps out an ordered execution plan, handling multi-hop or ambiguous requests into concrete subtasks.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div class="step-txt"><strong>Routing →</strong> The <strong>Execution Mode Selector</strong> directs each subtask to the appropriate path — LLM (GPT-4 / Gemini / Claude), Tool (MCP / APIs / Search), or ML (Vertex AI / Custom).</div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div class="step-txt"><strong>Response →</strong> Results from each engine are aggregated and the final answer is returned to the user through the gateway.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Diagram — Enterprise AI Platform Integration (EnterpriseAIPlatformIntegration.md)</div>
+    <div class="diagram-box">
+      <pre class="mermaid">
+flowchart TD
+User[User] --> Gateway[AI Gateway]
+Gateway --> Intent[Intent Classifier]
+Intent --> Planner[Planner]
+Planner --> Mode[Execution Mode Selector]
+
+Mode --> LLM[LLM Path]
+Mode --> Tool[Tool Path]
+Mode --> ML[ML Path]
+
+subgraph LLMExecution[LLM Execution]
+  LLM --> GPT[GPT-4]
+  LLM --> Gemini[Gemini]
+  LLM --> Claude[Claude]
+end
+
+subgraph ToolExecution[Tool Execution]
+  Tool --> MCP[MCP Servers]
+  Tool --> API[External APIs]
+  Tool --> Search[Enterprise Search]
+end
+
+subgraph MLExecution[ML Execution]
+  ML --> Vertex[Vertex AI Endpoints]
+  ML --> Custom[Custom Models]
+end
+      </pre>
+    </div>
+
+    <div class="tags-block">
+      <div class="tags-label">Key Components</div>
+      <div class="tags">
+        <span class="tag t-blue">AI Gateway</span>
+        <span class="tag t-blue">Intent Classifier</span>
+        <span class="tag t-blue">Planner</span>
+        <span class="tag t-blue">Execution Mode Selector</span>
+        <span class="tag t-purple">GPT-4 · Gemini · Claude</span>
+        <span class="tag t-cyan">MCP Servers</span>
+        <span class="tag t-cyan">External APIs</span>
+        <span class="tag t-cyan">Enterprise Search</span>
+        <span class="tag t-green">Vertex AI Endpoints</span>
+        <span class="tag t-green">Custom Models</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     TOPIC 02 — REFERENCE ARCHITECTURE
+══════════════════════════════════════════ -->
+<div class="section" id="reference">
+  <div class="sec-eyebrow">Topic 02</div>
+  <div class="sec-title">Enterprise AI Platform Reference Architecture</div>
+  <div class="sec-sub">
+    The full blueprint for a production-grade AI system — a control plane that governs all decisions,
+    an agent runtime that executes them, and a rich tool ecosystem spanning RAG, LLMs, APIs, and Vertex AI.
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🏗️</div>
+      <div class="comp-name">Control Plane</div>
+      <div class="comp-desc">The decision layer: Gateway → Classifier → Planner → Mode Selector → Graph Builder. Every request passes through here before execution.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚙️</div>
+      <div class="comp-name">Execution Graph Builder</div>
+      <div class="comp-desc">Translates the planner's task list into a directed graph of tool calls, defining parallel vs. sequential execution and dependencies.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🤖</div>
+      <div class="comp-name">Agent Runtime</div>
+      <div class="comp-desc">The execution engine. Traverses the graph, invoking the right tool or model at each node and managing state between steps.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📚</div>
+      <div class="comp-name">RAG Service</div>
+      <div class="comp-desc">Retrieval-Augmented Generation — queries the Vector DB for semantically relevant enterprise documents to ground LLM answers in real data.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🗄️</div>
+      <div class="comp-name">Vector Database</div>
+      <div class="comp-desc">Stores embedding vectors of enterprise content. Enables millisecond-latency similarity search across millions of documents.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔗</div>
+      <div class="comp-name">LLM Gateway</div>
+      <div class="comp-desc">Unified routing layer for GPT, Gemini, and Claude. Handles token budgets, provider fallbacks, and cost allocation in one place.</div>
+    </div>
+  </div>
+
+  <div class="steps-block">
+    <div class="steps-label">Architecture Layers Explained</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-txt"><strong>Entry (Control Plane):</strong> User → <strong>AI Gateway</strong> → <strong>Intent Classifier</strong>. Every request is authenticated and classified before entering the system.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-txt"><strong>Planning:</strong> <strong>Planner + Execution Graph Builder</strong> decompose the intent into a structured, dependency-aware execution graph.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-txt"><strong>Runtime Execution:</strong> The <strong>Agent Runtime</strong> walks the graph, calling MCP servers, REST APIs, enterprise search, LLM gateway, or Vertex AI as needed per node.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div class="step-txt"><strong>RAG Pipeline:</strong> When factual context is required, the <strong>RAG Service</strong> queries the <strong>Vector DB</strong> and injects retrieved passages into the LLM prompt.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div class="step-txt"><strong>Model Routing:</strong> <strong>LLM Gateway</strong> picks GPT-4 / Gemini / Claude based on task and cost; <strong>Vertex AI</strong> serves structured ML predictions from custom or managed models.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Diagram — Full Enterprise Reference Architecture (EnterpriseAIPlatformReferenceArchitecture.md)</div>
+    <div class="diagram-box">
+      <pre class="mermaid">
+flowchart TD
+User[User] --> Gateway[AI Gateway]
+Gateway --> Intent[Intent Classifier]
+Intent --> Planner[Planner]
+Planner --> Mode[Execution Mode Selector]
+Mode --> Graph[Execution Graph Builder]
+Graph --> Agent[Agent Runtime]
+
+Agent --> ToolLLM[LLM Gateway]
+Agent --> ToolMCP[MCP Servers]
+Agent --> ToolAPI[External APIs]
+Agent --> ToolSearch[Enterprise Search]
+Agent --> ToolRAG[RAG Service]
+Agent --> ToolVertex[Vertex AI Endpoints]
+
+ToolRAG --> VectorDB[Vector Database]
+
+ToolLLM --> GPT[GPT-4]
+ToolLLM --> Gemini[Gemini]
+ToolLLM --> Claude[Claude]
+
+ToolVertex --> CustomModels[Custom Models]
+ToolVertex --> VertexModels[Vertex Models]
+      </pre>
+    </div>
+
+    <div class="tags-block">
+      <div class="tags-label">Architecture Planes</div>
+      <div class="tags">
+        <span class="tag t-blue">AI Gateway</span>
+        <span class="tag t-blue">Intent Classifier</span>
+        <span class="tag t-blue">Planner</span>
+        <span class="tag t-blue">Execution Graph Builder</span>
+        <span class="tag t-purple">Agent Runtime</span>
+        <span class="tag t-purple">RAG Service</span>
+        <span class="tag t-purple">Vector Database</span>
+        <span class="tag t-cyan">MCP Servers</span>
+        <span class="tag t-cyan">External APIs</span>
+        <span class="tag t-cyan">Enterprise Search</span>
+        <span class="tag t-green">LLM Gateway</span>
+        <span class="tag t-green">Vertex AI Endpoints</span>
+        <span class="tag t-green">Custom Models</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     TOPIC 03 — ONLINE PREDICTION FLOW
+══════════════════════════════════════════ -->
+<div class="section" id="inference">
+  <div class="sec-eyebrow">Topic 03</div>
+  <div class="sec-title">Online Prediction Flow — Vertex AI</div>
+  <div class="sec-sub">
+    The exact lifecycle of a real-time ML prediction request — from the calling agent, through a controlled
+    gateway, into Vertex AI, down to the deployed model, and back as a normalised response.
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🧩</div>
+      <div class="comp-name">Agent (Caller)</div>
+      <div class="comp-desc">Any upstream component — an orchestration agent, a microservice, or a workflow — that needs a real-time ML prediction.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛡️</div>
+      <div class="comp-name">Prediction Gateway</div>
+      <div class="comp-desc">Intercepts every prediction call. Validates the input schema, enforces per-client quotas, handles auth, and abstracts Vertex AI details from the caller.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">☁️</div>
+      <div class="comp-name">Vertex AI Platform</div>
+      <div class="comp-desc">Google Cloud's fully managed ML platform. Receives the invocation, routes to the correct deployed endpoint, and manages auto-scaling and health.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚡</div>
+      <div class="comp-name">Deployed Model</div>
+      <div class="comp-desc">The actual inference workload — a custom-trained model, a fine-tuned foundation model, or a pre-built Vertex AI model running on managed compute.</div>
+    </div>
+  </div>
+
+  <div class="steps-block">
+    <div class="steps-label">Prediction Request Lifecycle</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-txt"><strong>Predict Request →</strong> The <strong>Agent</strong> sends a structured payload (input features) to the Prediction Gateway.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-txt"><strong>Validation &amp; Routing →</strong> The <strong>Gateway</strong> validates the schema, enforces rate limits, and invokes the correct Vertex AI endpoint URL.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-txt"><strong>Inference Execution →</strong> <strong>Vertex AI</strong> loads the request onto the deployed <strong>Model</strong>, which runs forward-pass inference.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div class="step-txt"><strong>Prediction Return →</strong> The <strong>Model</strong> returns raw scores or labels back through Vertex AI to the Gateway.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div class="step-txt"><strong>Normalised Result →</strong> The <strong>Gateway</strong> formats the response into a consistent contract (e.g., JSON schema) and returns it to the <strong>Agent</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Diagram — Online Prediction Sequence (OnlinePredictionFlowArchitectureUsingVertexAi.md)</div>
+    <div class="diagram-box">
+      <pre class="mermaid">
+sequenceDiagram
+  participant Agent
+  participant Gateway as Prediction Gateway
+  participant Vertex as Vertex AI
+  participant Model as Deployed Model
+
+  Agent->>Gateway: Predict Request (input features)
+  Gateway->>Vertex: Invoke Endpoint
+  Vertex->>Model: Execute Inference
+
+  Model-->>Vertex: Raw Prediction
+  Vertex-->>Gateway: Response
+  Gateway-->>Agent: Normalised Result
+      </pre>
+    </div>
+
+    <div class="tags-block">
+      <div class="tags-label">Key Principles</div>
+      <div class="tags">
+        <span class="tag t-cyan">Online / Real-Time Inference</span>
+        <span class="tag t-cyan">Gateway Abstraction</span>
+        <span class="tag t-cyan">Input Validation</span>
+        <span class="tag t-green">Vertex AI Endpoint</span>
+        <span class="tag t-green">Managed Auto-Scaling</span>
+        <span class="tag t-blue">Schema Normalisation</span>
+        <span class="tag t-blue">Rate Limiting</span>
+        <span class="tag t-purple">Low-Latency Serving</span>
+        <span class="tag t-amber">Auth &amp; Quota Enforcement</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     TOPIC 04 — MLOPS LIFECYCLE
+══════════════════════════════════════════ -->
+<div class="section" id="lifecycle">
+  <div class="sec-eyebrow">Topic 04</div>
+  <div class="sec-title">Vertex AI MLOps Lifecycle Pipeline</div>
+  <div class="sec-sub">
+    The complete, self-improving loop of an ML model's life — from raw data ingestion and feature engineering,
+    through training and approval, to production deployment, continuous monitoring, and drift-triggered retraining.
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📥</div>
+      <div class="comp-name">Data Ingestion</div>
+      <div class="comp-desc">Raw data is collected from databases, event streams, and files; validated, deduplicated, and loaded into the pipeline.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔧</div>
+      <div class="comp-name">Feature Engineering</div>
+      <div class="comp-desc">Data is cleaned, transformed, and encoded into numerical features stored in a Feature Store for reuse across experiments.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🏋️</div>
+      <div class="comp-name">Training</div>
+      <div class="comp-desc">Vertex AI Training jobs consume feature sets and produce a serialised model artifact using scalable, managed compute.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📊</div>
+      <div class="comp-name">Evaluation</div>
+      <div class="comp-desc">Trained models are assessed on held-out data using business-relevant metrics (accuracy, F1, AUC-ROC, MAE) before promotion.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📦</div>
+      <div class="comp-name">Model Registry</div>
+      <div class="comp-desc">Approved artifacts are versioned and stored — a single source of truth with lineage, metadata, and rollback capability.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">✅</div>
+      <div class="comp-name">Approval Gate</div>
+      <div class="comp-desc">Human review or automated policy checks ensure only compliant, performant models reach production endpoints.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚀</div>
+      <div class="comp-name">Vertex Endpoint (Deploy)</div>
+      <div class="comp-desc">The approved model is deployed to a live Vertex AI endpoint with traffic splitting, canary rollout, and auto-scaling.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📡</div>
+      <div class="comp-name">Monitoring &amp; Drift Detection</div>
+      <div class="comp-desc">Production traffic is continuously observed for data drift, concept drift, and degraded prediction quality — triggering alerts or auto-retraining.</div>
+    </div>
+  </div>
+
+  <div class="steps-block">
+    <div class="steps-label">The Continuous Learning Loop</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <div class="step-txt"><strong>Data → Ingestion:</strong> Raw enterprise data is validated and loaded into the pipeline from various source systems.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <div class="step-txt"><strong>Ingestion → Feature Engineering:</strong> Data is transformed into structured, reusable features and stored in a Feature Store.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <div class="step-txt"><strong>Features → Training:</strong> Vertex AI Training jobs produce a model artifact from the prepared feature sets.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <div class="step-txt"><strong>Training → Evaluation → Registry:</strong> Metrics are assessed; models that meet thresholds are versioned into the Model Registry.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">5</div>
+        <div class="step-txt"><strong>Registry → Approval Gate → Deploy:</strong> After passing human or automated review, the model is deployed to a live Vertex AI endpoint.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">6</div>
+        <div class="step-txt"><strong>Monitor → Drift → Feedback → Retrain:</strong> Production behaviour is tracked. Drift signals feed back into the training stage — closing the <strong>continuous learning loop</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Diagram — MLOps Feedback Loop (VertexAIModelTrainingFeedbackLoopLifecycle.md)</div>
+    <div class="diagram-box">
+      <pre class="mermaid">
+flowchart LR
+Data[Raw Data] --> Ingest[Ingestion]
+Ingest --> Features[Feature Engineering]
+Features --> Train[Training]
+Train --> Eval[Evaluation]
+Eval --> Registry[Model Registry]
+Registry --> Approve[Approval Gate]
+Approve --> Deploy[Vertex Endpoint]
+Deploy --> Monitor[Monitoring]
+Monitor --> Drift[Drift Detection]
+Drift --> Feedback[Feedback Signal]
+Feedback --> Train
+      </pre>
+    </div>
+
+    <div class="tags-block">
+      <div class="tags-label">MLOps Concepts</div>
+      <div class="tags">
+        <span class="tag t-green">Data Ingestion</span>
+        <span class="tag t-green">Feature Engineering</span>
+        <span class="tag t-green">Vertex AI Training</span>
+        <span class="tag t-blue">Model Evaluation</span>
+        <span class="tag t-blue">Model Registry</span>
+        <span class="tag t-blue">Approval Gate</span>
+        <span class="tag t-cyan">Vertex AI Endpoint</span>
+        <span class="tag t-cyan">Production Monitoring</span>
+        <span class="tag t-amber">Data Drift Detection</span>
+        <span class="tag t-rose">Continuous Retraining</span>
+        <span class="tag t-purple">Feedback Loop</span>
+        <span class="tag t-purple">Auto-Scaling</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     SUMMARY
+══════════════════════════════════════════ -->
+<div class="section" id="summary">
+  <div class="sec-eyebrow">Summary</div>
+  <div class="sec-title">Architecture at a Glance</div>
+  <div class="sec-sub">
+    Four interconnected systems forming a complete enterprise AI platform — each responsible for a distinct, well-separated layer of intelligence and operation.
+  </div>
+
+  <div class="summary-grid">
+    <div class="sum-card c1">
+      <h3>01 · Runtime Integration</h3>
+      <ul>
+        <li>Single AI Gateway entry point</li>
+        <li>ML-based intent classification</li>
+        <li>Multi-path routing — LLM / Tool / ML</li>
+        <li>Pluggable LLM providers</li>
+        <li>Enterprise tool connectivity</li>
+      </ul>
+    </div>
+    <div class="sum-card c2">
+      <h3>02 · Reference Architecture</h3>
+      <ul>
+        <li>Layered control plane design</li>
+        <li>Execution graph orchestration</li>
+        <li>RAG with Vector DB grounding</li>
+        <li>Unified LLM &amp; Vertex AI gateway</li>
+        <li>Stateful agent runtime</li>
+      </ul>
+    </div>
+    <div class="sum-card c3">
+      <h3>03 · Online Prediction Flow</h3>
+      <ul>
+        <li>Real-time Vertex AI inference</li>
+        <li>Gateway abstraction &amp; validation</li>
+        <li>Normalised response contract</li>
+        <li>Rate limiting &amp; quota control</li>
+        <li>Low-latency managed serving</li>
+      </ul>
+    </div>
+    <div class="sum-card c4">
+      <h3>04 · MLOps Lifecycle</h3>
+      <ul>
+        <li>End-to-end training pipeline</li>
+        <li>Versioned model registry</li>
+        <li>Human &amp; automated approval gates</li>
+        <li>Continuous production monitoring</li>
+        <li>Drift-triggered auto-retraining</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="lbl">Core Design Principle</div>
+    <p>Separation of Reasoning, Execution, and Continuous Learning</p>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  Enterprise AI Platform Architecture Guide &nbsp;·&nbsp; Powered by Mermaid.js &nbsp;·&nbsp; 2025
+</footer>
+
+</body>
+</html>
