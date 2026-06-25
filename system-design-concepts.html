@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Design — Concepts, Trade-offs &amp; Real-World Architectures</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(139,92,246,.13);
+      border: 1px solid rgba(139,92,246,.3);
+      color: var(--purple-l);
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px;
+    }
+    .hero p { font-size: 1.1rem; color: var(--t2); max-width: 760px; margin: 0 auto 40px; }
+
+    /* NAV */
+    .nav {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      padding: 0 40px 44px; position: relative; z-index: 1;
+    }
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: 100px;
+      border: 1px solid var(--border); background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500; backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1); transform: translateY(-2px);
+    }
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* CONTAINER */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px 96px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+    .sec-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+    .sec-title { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: var(--t1); margin-bottom: 10px; }
+    .sec-sub { font-size: 1rem; color: var(--t2); max-width: 800px; margin-bottom: 32px; }
+
+    /* SUB-HEADING */
+    .qh {
+      font-size: 1.15rem; font-weight: 700; color: var(--t1);
+      margin: 36px 0 14px; padding-left: 14px; border-left: 3px solid var(--blue);
+      line-height: 1.4;
+    }
+    .qh small { display: block; font-size: 12px; font-weight: 600; color: var(--blue-l); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+
+    .lead { font-size: 14.5px; color: var(--t2); margin-bottom: 16px; }
+    .lead strong { color: var(--t1); }
+
+    /* CARD GRID */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .comp-card { background: rgba(59,130,246,.04); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all .25s; }
+    .comp-card:hover { background: rgba(59,130,246,.09); border-color: var(--border-h); transform: translateY(-3px); }
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+    .comp-name { font-size: 13.5px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .comp-desc code { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+    /* CODE BLOCK */
+    .code {
+      background: #0a1424;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px; line-height: 1.7;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    .code .cmt { color: #64748b; font-style: italic; }
+    .code .kw  { color: #c4b5fd; }
+    .code .ty  { color: #67e8f9; }
+    .code .st  { color: #6ee7b7; }
+    .code .nm  { color: #fcd34d; }
+    .code .bad { color: #fda4af; }
+    .code .good{ color: #6ee7b7; }
+    .code-label {
+      display: inline-block; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 6px; margin-bottom: -6px;
+    }
+    .cl-bad  { background: rgba(244,63,94,.12); color: #fda4af; border: 1px solid rgba(244,63,94,.3); }
+    .cl-good { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .cl-neutral { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+    /* INLINE CODE */
+    p code, li code, td code, .lead code, .step-txt code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: rgba(59,130,246,.10); color: #93c5fd;
+      padding: 1px 6px; border-radius: 5px;
+    }
+
+    /* CALLOUT */
+    .callout { padding: 18px 22px; border-radius: 12px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .callout-blue  { background: rgba(59,130,246,.08); border-left: 3px solid var(--blue); }
+    .callout-green { background: rgba(16,185,129,.08); border-left: 3px solid var(--emerald); }
+    .callout-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--amber); }
+    .callout-purple{ background: rgba(139,92,246,.08); border-left: 3px solid var(--purple); }
+    .callout-rose  { background: rgba(244,63,94,.08);  border-left: 3px solid var(--rose); }
+    .callout-icon  { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body  { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+    .callout-body strong { color: var(--t1); }
+    .callout-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,.06); color: #93c5fd; padding: 1px 6px; border-radius: 5px; }
+
+    /* TABLE */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .styled-table th {
+      background: rgba(59,130,246,.12); color: var(--blue-l);
+      font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(59,130,246,.25);
+    }
+    .styled-table td { padding: 11px 16px; font-size: 13px; color: var(--t2); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .styled-table tr:hover td { background: rgba(59,130,246,.04); }
+    .styled-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(59,130,246,.10); color: #93c5fd; padding: 1px 5px; border-radius: 4px; }
+
+    /* STEPS */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin: 18px 0; }
+    .step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; }
+    .step-n { min-width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+    .panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: .04em; }
+    .panel ul { list-style: none; }
+    .panel ul li { font-size: 13px; color: var(--t2); padding: 5px 0 5px 20px; position: relative; line-height: 1.55; }
+    .panel ul li::before { position: absolute; left: 0; }
+    .panel-bad { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .panel-bad h4 { color: #fda4af; }
+    .panel-bad ul li::before { content: '✕'; color: var(--rose); }
+    .panel-good { background: rgba(16,185,129,.05); border-color: rgba(16,185,129,.25); }
+    .panel-good h4 { color: #6ee7b7; }
+    .panel-good ul li::before { content: '✓'; color: var(--emerald); }
+    .panel-neutral { background: rgba(59,130,246,.05); border-color: rgba(59,130,246,.25); }
+    .panel-neutral h4 { color: #93c5fd; }
+    .panel-neutral ul li::before { content: '→'; color: var(--blue-l); }
+
+    /* DIAGRAM */
+    .diagram-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin: 20px 0; }
+    .diagram-lbl { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+    .diagram-box { background: #ffffff; border-radius: 10px; padding: 24px; overflow-x: auto; }
+
+    /* TAGS */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tag { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 500; border: 1px solid; }
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 56px 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 40px; border-top: 1px solid var(--border); color: var(--t3); font-size: 13px; }
+    footer a { color: var(--blue-l); text-decoration: none; }
+
+    /* BACK TO TOP */
+    .btt { position: fixed; bottom: 28px; right: 28px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 20px rgba(59,130,246,.4); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+    .btt.visible { opacity: 1; pointer-events: auto; }
+    .btt:hover { transform: translateY(-3px); }
+
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btt" id="btt" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge"><span></span> System Design Field Guide</div>
+  <h1>System Design — Concepts,<br>Trade-offs &amp; Real Architectures</h1>
+  <p>
+    A complete, senior-level reference for designing systems that scale: the fundamentals (latency, throughput,
+    consistency), the building blocks (load balancers, caches, queues, databases), the trade-offs that define every
+    decision, and full worked designs for real products like URL shorteners, news feeds, chat, and rate limiters.
+  </p>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="#fundamentals"> <span class="dot" style="background:#3b82f6"></span> Fundamentals</a>
+  <a href="#characteristics"><span class="dot" style="background:#8b5cf6"></span> What Makes It "Good"</a>
+  <a href="#process">      <span class="dot" style="background:#06b6d4"></span> Approach &amp; Process</a>
+  <a href="#estimation">   <span class="dot" style="background:#10b981"></span> Back-of-Envelope</a>
+  <a href="#scaling">      <span class="dot" style="background:#f59e0b"></span> Scaling</a>
+  <a href="#loadbalancing"><span class="dot" style="background:#f43f5e"></span> Load Balancing</a>
+  <a href="#caching">      <span class="dot" style="background:#a78bfa"></span> Caching</a>
+  <a href="#databases">    <span class="dot" style="background:#3b82f6"></span> Databases</a>
+  <a href="#replication">  <span class="dot" style="background:#8b5cf6"></span> Replication &amp; Sharding</a>
+  <a href="#consistency">  <span class="dot" style="background:#06b6d4"></span> CAP &amp; Consistency</a>
+  <a href="#messaging">    <span class="dot" style="background:#10b981"></span> Messaging &amp; Async</a>
+  <a href="#communication"><span class="dot" style="background:#f59e0b"></span> Communication</a>
+  <a href="#patterns">     <span class="dot" style="background:#f43f5e"></span> Architectural Patterns</a>
+  <a href="#reliability">  <span class="dot" style="background:#a78bfa"></span> Reliability &amp; Resilience</a>
+  <a href="#observability"><span class="dot" style="background:#06b6d4"></span> Observability</a>
+  <a href="#security">     <span class="dot" style="background:#10b981"></span> Security &amp; Networking</a>
+  <a href="#tradeoffs">    <span class="dot" style="background:#f59e0b"></span> Trade-off Cheat-Sheet</a>
+  <a href="#examples">     <span class="dot" style="background:#f43f5e"></span> Worked Examples</a>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════ 01 — FUNDAMENTALS ══════════════ -->
+<div class="section" id="fundamentals">
+  <div class="sec-eyebrow">Foundation 01</div>
+  <div class="sec-title">The Fundamentals — The Vocabulary of Scale</div>
+  <div class="sec-sub">Every design decision is ultimately a conversation about these quantities. Get the definitions exact and the trade-offs become obvious.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">⏱️</div>
+      <div class="comp-name">Latency</div>
+      <div class="comp-desc">Time for a <strong>single</strong> operation end-to-end. Measure with percentiles (<code>p50</code>, <code>p99</code>), never just the average — tail latency is what users feel.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚀</div>
+      <div class="comp-name">Throughput</div>
+      <div class="comp-desc">Operations completed <strong>per unit time</strong> (RPS, QPS, MB/s). You can often trade latency for throughput (batching) and vice-versa.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📈</div>
+      <div class="comp-name">Scalability</div>
+      <div class="comp-desc">The ability to handle growing load by adding resources. <strong>Linear</strong> scalability (2× resources → 2× capacity) is the goal; contention &amp; coordination erode it.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🟢</div>
+      <div class="comp-name">Availability</div>
+      <div class="comp-desc">Fraction of time the system is operational. Measured in "nines" — <code>99.99%</code> ≈ 52 min/year downtime. Driven by redundancy &amp; fast recovery.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔒</div>
+      <div class="comp-name">Reliability</div>
+      <div class="comp-desc">Probability the system performs <strong>correctly</strong> over time (no data loss/corruption). Available ≠ reliable — a system can be up but returning wrong answers.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛠️</div>
+      <div class="comp-name">Maintainability</div>
+      <div class="comp-desc">How easily the system is operated, understood, and evolved. Often the dominant long-term cost — favour simplicity &amp; observability.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔁</div>
+      <div class="comp-name">Consistency</div>
+      <div class="comp-desc">Do all readers see the same data? Ranges from <strong>strong</strong> (always latest) to <strong>eventual</strong> (converges later). A core trade-off lever.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧯</div>
+      <div class="comp-name">Fault Tolerance</div>
+      <div class="comp-desc">The system keeps working when components fail. Achieved via redundancy, replication, retries, isolation, and graceful degradation.</div>
+    </div>
+  </div>
+
+  <div class="qh"><small>Know these numbers cold</small>Latency Numbers Every Engineer Should Know</div>
+  <table class="styled-table">
+    <thead><tr><th>Operation</th><th>Approx. latency</th><th>Relative</th></tr></thead>
+    <tbody>
+      <tr><td>L1 cache reference</td><td>~1 ns</td><td>1×</td></tr>
+      <tr><td>Main memory (RAM) reference</td><td>~100 ns</td><td>100×</td></tr>
+      <tr><td>SSD random read</td><td>~16 µs</td><td>16,000×</td></tr>
+      <tr><td>Datacenter round-trip (same region)</td><td>~0.5 ms</td><td>500,000×</td></tr>
+      <tr><td>Disk (HDD) seek</td><td>~5–10 ms</td><td>~10,000,000×</td></tr>
+      <tr><td>Network round-trip (cross-continent)</td><td>~150 ms</td><td>~150,000,000×</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">
+      <strong>The takeaway:</strong> memory is ~100× faster than SSD, SSD ~100× faster than network, and crossing
+      a continent costs ~150 ms no matter what. This is <em>why</em> we cache aggressively, keep data close to
+      compute, avoid chatty cross-service calls, and put CDNs near users. Physics drives architecture.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">📊</div>
+    <div class="callout-body">
+      <strong>Availability "nines" cheat-sheet:</strong> <code>99%</code> = 3.65 days/yr down ·
+      <code>99.9%</code> = 8.76 hrs · <code>99.99%</code> = 52.6 min · <code>99.999%</code> = 5.26 min.
+      Each extra nine is roughly 10× more expensive — match the target to the business need, don't over-buy.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 02 — CHARACTERISTICS OF A GOOD SYSTEM ══════════════ -->
+<div class="section" id="characteristics">
+  <div class="sec-eyebrow">Foundation 02</div>
+  <div class="sec-title">Characteristics of a Well-Designed System</div>
+  <div class="sec-sub">"Good" isn't one property — it's a balanced set. A senior designs for the ones that matter <em>for this product</em> and consciously sacrifices the rest.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Signs of a healthy design</h4>
+      <ul>
+        <li><strong>Scalable</strong> — grows by adding nodes, not rewrites</li>
+        <li><strong>Available &amp; resilient</strong> — survives node/zone failure</li>
+        <li><strong>Performant</strong> — meets latency SLOs at p99</li>
+        <li><strong>Loosely coupled</strong> — parts evolve independently</li>
+        <li><strong>Observable</strong> — you can see &amp; debug it in prod</li>
+        <li><strong>Secure</strong> — least privilege, defence in depth</li>
+        <li><strong>Simple</strong> — as few moving parts as the job allows</li>
+        <li><strong>Cost-efficient</strong> — right-sized for the load</li>
+        <li><strong>Evolvable</strong> — easy to change as needs change</li>
+      </ul>
+    </div>
+    <div class="panel panel-bad">
+      <h4>Smells of a fragile design</h4>
+      <ul>
+        <li>Single points of failure (one DB, one node)</li>
+        <li>Tight coupling — one change ripples everywhere</li>
+        <li>Hidden synchronous chains that cascade failures</li>
+        <li>Unbounded queues/retries that amplify outages</li>
+        <li>No back-pressure → memory blow-ups under load</li>
+        <li>"It works on the happy path" — no failure design</li>
+        <li>No metrics/traces — debugging by guesswork</li>
+        <li>Premature complexity (microservices for a CRUD app)</li>
+        <li>Shared mutable state across services / a shared DB</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">⭐</div>
+    <div class="callout-body">
+      <strong>The senior mindset:</strong> there is no "best" architecture — only the best fit for the constraints
+      (load, budget, team, latency, consistency needs, time-to-market). Great design is the art of choosing
+      <em>which trade-offs to make</em> and being able to defend them. Start simple; add complexity only when a real
+      requirement forces it.
+    </div>
+  </div>
+
+  <div class="qh"><small>The guardrails</small>Non-Functional Requirements (NFRs)</div>
+  <p class="lead">Functional requirements say <em>what</em> the system does; NFRs say <em>how well</em>. Most system-design decisions are driven by NFRs — clarify them first.</p>
+  <div class="tags">
+    <span class="tag t-blue">Scalability</span>
+    <span class="tag t-green">Availability</span>
+    <span class="tag t-purple">Latency / Performance</span>
+    <span class="tag t-cyan">Consistency</span>
+    <span class="tag t-amber">Durability</span>
+    <span class="tag t-rose">Security</span>
+    <span class="tag t-blue">Cost</span>
+    <span class="tag t-green">Maintainability</span>
+    <span class="tag t-purple">Compliance</span>
+    <span class="tag t-cyan">Observability</span>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 03 — APPROACH & PROCESS ══════════════ -->
+<div class="section" id="process">
+  <div class="sec-eyebrow">Method 03</div>
+  <div class="sec-title">The Approach — A Repeatable Design Process</div>
+  <div class="sec-sub">In an interview or a real RFC, the <em>process</em> signals seniority more than any single answer. Drive it like this.</div>
+
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Clarify requirements &amp; scope.</strong> Functional ("users post photos") and non-functional ("p99 &lt; 200 ms, 99.99% uptime, 10M DAU"). Pin down read/write ratio, data size, and the few features that matter. Don't boil the ocean.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Estimate scale.</strong> Back-of-envelope: QPS, storage/yr, bandwidth, cache size. These numbers decide whether you need 1 box or 1,000.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Define the API &amp; data model.</strong> The contract (REST/gRPC endpoints) and the core entities/access patterns. The access pattern drives the database choice — not the other way around.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Draw a high-level design.</strong> Client → LB → app → cache → DB, plus queues/CDN/search as needed. Get the boxes &amp; arrows right before the details.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>Deep-dive the hard parts.</strong> Pick the 1–2 components the scale stresses (the feed ranking, the ID generator, the hot partition) and detail them.</div></div>
+    <div class="step"><div class="step-n">6</div><div class="step-txt"><strong>Identify bottlenecks &amp; scale.</strong> Where does it break first? Add caching, replication, sharding, async, CDN — justify each with the numbers.</div></div>
+    <div class="step"><div class="step-n">7</div><div class="step-txt"><strong>Address failures &amp; trade-offs.</strong> What happens when a node/zone/region dies? Discuss consistency choices, single points of failure, and how you'd evolve it.</div></div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Always think out loud and state assumptions.</strong> "I'll assume 80/20 read/write and 500 bytes per
+      record." Naming trade-offs ("I'm choosing eventual consistency here to keep writes fast; the feed can lag a few
+      seconds") is exactly what distinguishes a senior answer.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 04 — ESTIMATION ══════════════ -->
+<div class="section" id="estimation">
+  <div class="sec-eyebrow">Method 04</div>
+  <div class="sec-title">Back-of-the-Envelope Estimation</div>
+  <div class="sec-sub">A few quick calculations turn hand-waving into engineering. Memorize the units and the method.</div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Handy constants</h4>
+      <ul>
+        <li>1 day ≈ <code>86,400 s</code> ≈ 10<sup>5</sup> s</li>
+        <li>1 char ≈ 1 byte; 1 KB = 10<sup>3</sup>, 1 MB = 10<sup>6</sup></li>
+        <li>1 million writes/day ≈ <code>~12 writes/s</code> average</li>
+        <li>Read-heavy apps: assume 100:1 to 1000:1 read/write</li>
+        <li>Peak ≈ 2–3× average; design for peak</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>What to estimate</h4>
+      <ul>
+        <li><strong>QPS</strong> — average &amp; peak reads/writes</li>
+        <li><strong>Storage</strong> — bytes/record × records/day × years</li>
+        <li><strong>Bandwidth</strong> — QPS × payload size</li>
+        <li><strong>Memory</strong> — cache the hot 20% (80/20 rule)</li>
+        <li><strong>Servers</strong> — total QPS ÷ per-node QPS</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧮</div>
+    <div class="callout-body">
+      <strong>Worked example — a URL shortener at 100M new links/month:</strong>
+      <br>• Writes: 100M ÷ (30 × 86,400) ≈ <code>~40 writes/s</code>. With 100:1 read ratio → <code>~4,000 reads/s</code>.
+      <br>• Storage: 100M × 500 bytes ≈ <code>50 GB/month</code> → ~3 TB over 5 years. Trivial for one sharded DB.
+      <br>• Cache: hot 20% of reads → keep recent/popular mappings in Redis; ~a few GB serves most traffic.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 05 — SCALING ══════════════ -->
+<div class="section" id="scaling">
+  <div class="sec-eyebrow">Building Blocks 05</div>
+  <div class="sec-title">Scaling — Vertical vs Horizontal</div>
+  <div class="sec-sub">There are only two ways to get more capacity: a bigger machine, or more machines. Each has a ceiling and a cost curve.</div>
+
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>Vertical (scale up)</h4>
+      <ul>
+        <li>Bigger box — more CPU/RAM/disk</li>
+        <li>Simple: no app changes, no distribution</li>
+        <li>Hard ceiling (biggest machine available)</li>
+        <li>Single point of failure remains</li>
+        <li>Cost grows non-linearly at the top end</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Horizontal (scale out)</h4>
+      <ul>
+        <li>More boxes behind a load balancer</li>
+        <li>Near-limitless ceiling; commodity hardware</li>
+        <li>Redundancy → fault tolerance built in</li>
+        <li>Requires statelessness, distribution, coordination</li>
+        <li>Adds complexity (consistency, balancing, ops)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🔑</div>
+    <div class="callout-body">
+      <strong>Statelessness is the enabler.</strong> Horizontal scaling works because any node can serve any
+      request. Push session/state to a shared store (Redis/DB) so app servers are interchangeable and can be added,
+      removed, or replaced freely — the foundation of autoscaling and zero-downtime deploys.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">📐</div>
+    <div class="callout-body">
+      <strong>Amdahl &amp; Universal Scalability:</strong> the serial fraction of your workload caps the speedup, and
+      <em>coordination/contention</em> can make adding nodes <em>slower</em> past a point. Real-world scaling is
+      sub-linear — minimize shared state, locks, and cross-node chatter to push the ceiling higher.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 06 — LOAD BALANCING ══════════════ -->
+<div class="section" id="loadbalancing">
+  <div class="sec-eyebrow">Building Blocks 06</div>
+  <div class="sec-title">Load Balancing &amp; Traffic Distribution</div>
+  <div class="sec-sub">A load balancer spreads requests across healthy nodes, removing single points of failure and enabling horizontal scale.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔢</div>
+      <div class="comp-name">Round Robin</div>
+      <div class="comp-desc">Rotate through servers in order. Simple &amp; fair when nodes are equal and requests are uniform.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚖️</div>
+      <div class="comp-name">Least Connections</div>
+      <div class="comp-desc">Send to the node with the fewest active connections. Better for long-lived or uneven requests.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧮</div>
+      <div class="comp-name">Hash / IP Hash</div>
+      <div class="comp-desc">Map a key (client IP, session id) to a node consistently — useful for sticky routing without shared state.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🏋️</div>
+      <div class="comp-name">Weighted</div>
+      <div class="comp-desc">Bigger nodes get proportionally more traffic. Good for heterogeneous fleets or gradual rollouts.</div>
+    </div>
+  </div>
+
+  <table class="styled-table">
+    <thead><tr><th></th><th>Layer 4 (Transport)</th><th>Layer 7 (Application)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Operates on</strong></td><td>TCP/UDP, IP &amp; ports</td><td>HTTP — URLs, headers, cookies</td></tr>
+      <tr><td><strong>Smarts</strong></td><td>Fast, protocol-agnostic, no payload inspection</td><td>Content-based routing, TLS termination, path/host rules</td></tr>
+      <tr><td><strong>Use for</strong></td><td>Raw throughput, any protocol</td><td>APIs, microservice routing, A/B, canaries</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🩺</div>
+    <div class="callout-body">
+      <strong>Health checks are the whole point.</strong> The LB continuously probes nodes and removes unhealthy
+      ones from rotation, so failures are invisible to users. Pair with <strong>graceful draining</strong> (stop
+      sending new traffic, let in-flight requests finish) for zero-downtime deploys. The LB itself must be redundant
+      (active-active or active-passive) — don't replace one SPOF with another.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">📌</div>
+    <div class="callout-body">
+      <strong>Sticky sessions vs stateless:</strong> sticky (session affinity) pins a user to one node — simple but
+      breaks rebalancing &amp; fails when that node dies. Prefer <strong>stateless nodes + shared session store</strong>
+      so any node can serve any user. Use stickiness only as a last resort.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 07 — CACHING ══════════════ -->
+<div class="section" id="caching">
+  <div class="sec-eyebrow">Building Blocks 07</div>
+  <div class="sec-title">Caching — The Highest-Leverage Optimization</div>
+  <div class="sec-sub">Caching trades a little staleness &amp; memory for huge latency &amp; load reductions. It exists at every layer of the stack.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🌍</div>
+      <div class="comp-name">CDN / Edge</div>
+      <div class="comp-desc">Static assets &amp; cacheable responses served from POPs near the user. Slashes latency &amp; origin load. e.g. CloudFront, Cloudflare, Akamai.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧠</div>
+      <div class="comp-name">In-memory (local)</div>
+      <div class="comp-desc">Per-process cache (e.g. <code>IMemoryCache</code>). Fastest, but not shared and dies with the instance.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🗄️</div>
+      <div class="comp-name">Distributed (Redis)</div>
+      <div class="comp-desc">Shared cache across all nodes. Survives restarts, enables scale-out, also does locks/pub-sub/rate-limiting.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🗃️</div>
+      <div class="comp-name">DB / query cache</div>
+      <div class="comp-desc">Buffer pools, materialized views, and result caches inside or alongside the database.</div>
+    </div>
+  </div>
+
+  <div class="qh"><small>How writes &amp; reads interact</small>Caching Strategies</div>
+  <table class="styled-table">
+    <thead><tr><th>Strategy</th><th>How it works</th><th>Trade-off</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Cache-aside</strong> (lazy)</td><td>App reads cache → on miss loads DB → populates cache</td><td>Most common &amp; flexible; first request is slow; app owns invalidation</td></tr>
+      <tr><td><strong>Read-through</strong></td><td>Cache library loads from DB on miss transparently</td><td>Simpler app code; couples cache to data source</td></tr>
+      <tr><td><strong>Write-through</strong></td><td>Write to cache &amp; DB synchronously together</td><td>Consistent reads; slower writes</td></tr>
+      <tr><td><strong>Write-behind</strong></td><td>Write cache now, flush to DB asynchronously</td><td>Fast writes; risk of data loss if cache dies</td></tr>
+      <tr><td><strong>Write-around</strong></td><td>Write straight to DB, skip cache</td><td>Avoids cache churn for write-once data; cold reads</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🌩️</div>
+    <div class="callout-body">
+      <strong>The three failure modes:</strong>
+      <br>• <strong>Stampede / dog-pile</strong> — a hot key expires, thousands hit the DB at once. Fix: single-flight lock, early/probabilistic refresh.
+      <br>• <strong>Penetration</strong> — queries for non-existent keys bypass the cache. Fix: cache a null sentinel or a Bloom filter.
+      <br>• <strong>Avalanche</strong> — many keys expire together. Fix: jitter the TTLs.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🧯</div>
+    <div class="callout-body">
+      <strong>Invalidation is the hard part.</strong> Strategies: TTL expiry (simplest), write-time eviction, or
+      versioned/tagged keys. Eviction policies when full: <strong>LRU</strong> (least recently used, the default),
+      <strong>LFU</strong> (least frequently used), or TTL-based. Cache only data that's read-heavy, expensive to
+      compute, and tolerant of slight staleness — and always track the <strong>hit ratio</strong>.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 08 — DATABASES ══════════════ -->
+<div class="section" id="databases">
+  <div class="sec-eyebrow">Building Blocks 08</div>
+  <div class="sec-title">Databases — Choosing the Right Store</div>
+  <div class="sec-sub">The access pattern picks the database, not fashion. Match the data shape, query needs, and consistency requirements.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Type</th><th>Best for</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Relational (SQL)</strong></td><td>Structured data, joins, transactions, strong consistency</td><td>PostgreSQL, MySQL, SQL Server</td></tr>
+      <tr><td><strong>Key-Value</strong></td><td>Simple lookups, sessions, caches — ultra-fast</td><td>Redis, DynamoDB, Memcached</td></tr>
+      <tr><td><strong>Document</strong></td><td>Semi-structured/JSON, flexible schema, aggregates</td><td>MongoDB, Couchbase, Cosmos DB</td></tr>
+      <tr><td><strong>Wide-Column</strong></td><td>Huge write volume, time-series, known query paths</td><td>Cassandra, ScyllaDB, Bigtable, HBase</td></tr>
+      <tr><td><strong>Graph</strong></td><td>Highly connected data, relationship traversal</td><td>Neo4j, Neptune</td></tr>
+      <tr><td><strong>Search</strong></td><td>Full-text search, relevance, faceting</td><td>Elasticsearch, OpenSearch, Solr</td></tr>
+      <tr><td><strong>Time-Series</strong></td><td>Metrics, IoT, append-heavy time-stamped data</td><td>InfluxDB, TimescaleDB, Prometheus</td></tr>
+      <tr><td><strong>Blob / Object</strong></td><td>Files, images, video, backups</td><td>S3, Azure Blob, GCS</td></tr>
+    </tbody>
+  </table>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>SQL — pick when</h4>
+      <ul>
+        <li>You need ACID transactions &amp; integrity</li>
+        <li>Complex queries, joins, ad-hoc reporting</li>
+        <li>The schema is well understood &amp; stable</li>
+        <li>Strong consistency is required (money, inventory)</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>NoSQL — pick when</h4>
+      <ul>
+        <li>Massive scale / write throughput beyond one node</li>
+        <li>Flexible or rapidly-changing schema</li>
+        <li>Known, simple access patterns (key lookups)</li>
+        <li>Eventual consistency &amp; availability are acceptable</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>ACID vs BASE:</strong> SQL favours <strong>ACID</strong> (Atomic, Consistent, Isolated, Durable) —
+      correctness first. Many NoSQL stores favour <strong>BASE</strong> (Basically Available, Soft-state,
+      Eventually consistent) — availability &amp; scale first. Neither is "better"; they sit on opposite ends of the
+      consistency/availability trade-off. Polyglot persistence (different stores for different jobs) is normal.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🌲</div>
+    <div class="callout-body">
+      <strong>Indexing &amp; storage engines:</strong> indexes turn O(n) scans into O(log n) lookups but slow writes
+      and cost space — index your query predicates, not everything. <strong>B-Tree</strong> engines (most SQL) are
+      read-optimized; <strong>LSM-Tree</strong> engines (Cassandra, RocksDB) are write-optimized. Match the engine to
+      your read/write ratio.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 09 — REPLICATION & SHARDING ══════════════ -->
+<div class="section" id="replication">
+  <div class="sec-eyebrow">Building Blocks 09</div>
+  <div class="sec-title">Replication, Partitioning &amp; Sharding</div>
+  <div class="sec-sub">Replication copies data for availability &amp; read scale; partitioning/sharding splits data for write scale &amp; capacity. Most big systems do both.</div>
+
+  <div class="qh"><small>Copy the data</small>Replication</div>
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Leader–Follower (primary–replica)</h4>
+      <ul>
+        <li>Writes go to the leader; reads fan out to followers</li>
+        <li>Scales reads; gives redundancy &amp; failover</li>
+        <li>Replication lag → followers can serve stale reads</li>
+        <li>Failover promotes a follower if the leader dies</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Multi-Leader / Leaderless</h4>
+      <ul>
+        <li>Multiple write nodes (multi-region, high availability)</li>
+        <li>Scales writes &amp; survives region loss</li>
+        <li>Write conflicts → need resolution (LWW, vector clocks, CRDTs)</li>
+        <li>Leaderless (Dynamo-style) uses quorums: <code>R + W &gt; N</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🔁</div>
+    <div class="callout-body">
+      <strong>Sync vs async replication:</strong> synchronous replication guarantees no data loss but adds write
+      latency and stalls if a replica is slow. Asynchronous is fast but can lose the last writes on failover. Many
+      systems use <strong>semi-sync</strong> (ack from at least one replica) to balance durability and latency.
+    </div>
+  </div>
+
+  <div class="qh"><small>Split the data</small>Partitioning / Sharding</div>
+  <table class="styled-table">
+    <thead><tr><th>Strategy</th><th>How</th><th>Watch out for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Range</strong></td><td>Partition by key ranges (A–M, N–Z, by date)</td><td>Hot spots if data/traffic is skewed (e.g. "today")</td></tr>
+      <tr><td><strong>Hash</strong></td><td>Partition by <code>hash(key) % N</code></td><td>Even spread, but range queries scatter; resharding moves everything</td></tr>
+      <tr><td><strong>Consistent hashing</strong></td><td>Keys &amp; nodes on a ring; add/remove moves minimal data</td><td>The standard for elastic clusters (Cassandra, Dynamo)</td></tr>
+      <tr><td><strong>Directory / lookup</strong></td><td>A lookup service maps key → shard</td><td>Flexible, but the directory is a new SPOF/bottleneck</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🔥</div>
+    <div class="callout-body">
+      <strong>The hot-partition (celebrity) problem:</strong> a single key (a viral post, a huge customer) overwhelms
+      one shard. Mitigate by choosing a high-cardinality shard key, adding a salt/suffix to spread a hot key, or
+      caching it separately. <strong>Choosing the shard key is the most consequential decision</strong> — a bad key
+      means painful resharding later.
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Replication + Sharding combined</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart TB
+  App["App Servers"] --> R["Router / Proxy"]
+  R --> S1L["Shard 1 Leader"]
+  R --> S2L["Shard 2 Leader"]
+  S1L --> S1F1["Shard 1 Replica"]
+  S1L --> S1F2["Shard 1 Replica"]
+  S2L --> S2F1["Shard 2 Replica"]
+  S2L --> S2F2["Shard 2 Replica"]
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 10 — CAP & CONSISTENCY ══════════════ -->
+<div class="section" id="consistency">
+  <div class="sec-eyebrow">Theory 10</div>
+  <div class="sec-title">CAP, PACELC &amp; Consistency Models</div>
+  <div class="sec-sub">The theorems that govern every distributed-data decision. Memorize them; they'll frame half your design discussions.</div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">📜</div>
+    <div class="callout-body">
+      <strong>CAP theorem:</strong> in the presence of a network <strong>P</strong>artition you can guarantee
+      <strong>C</strong>onsistency <em>or</em> <strong>A</strong>vailability, not both. Since partitions are
+      inevitable, the real choice is <strong>CP</strong> (refuse/limit requests to stay consistent) vs
+      <strong>AP</strong> (stay available, reconcile later).
+    </div>
+  </div>
+
+  <table class="styled-table">
+    <thead><tr><th>Choice</th><th>On partition</th><th>Fits</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CP</strong></td><td>Sacrifice availability to avoid stale/conflicting data</td><td>Banking, inventory, bookings, leader election</td></tr>
+      <tr><td><strong>AP</strong></td><td>Keep serving, accept temporary inconsistency</td><td>Feeds, carts, catalogs, DNS, recommendations</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">➕</div>
+    <div class="callout-body">
+      <strong>PACELC refines CAP:</strong> if Partition → choose A or C; <strong>E</strong>lse (normal operation) →
+      choose <strong>L</strong>atency or <strong>C</strong>onsistency. Even with no failures, strong consistency
+      costs coordination round-trips. This is why "eventually consistent" systems feel faster.
+    </div>
+  </div>
+
+  <div class="qh"><small>A spectrum, not a switch</small>Consistency Models</div>
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔐</div>
+      <div class="comp-name">Strong / Linearizable</div>
+      <div class="comp-desc">Every read sees the latest write, as if there were one copy. Simplest to reason about, most expensive. e.g. a single-leader RDBMS, Spanner.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⏳</div>
+      <div class="comp-name">Eventual</div>
+      <div class="comp-desc">Replicas converge "eventually" if writes stop. Cheapest &amp; most available. e.g. DNS, Dynamo, S3 (historically).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">👤</div>
+      <div class="comp-name">Read-your-writes</div>
+      <div class="comp-desc">A user always sees their own latest write (even if others lag). Crucial for "I posted but don't see it" UX.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔗</div>
+      <div class="comp-name">Causal / Monotonic</div>
+      <div class="comp-desc">Preserves cause→effect ordering and never shows data going "backwards." A practical middle ground.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🧩</div>
+    <div class="callout-body">
+      <strong>Apply consistency per use-case, not globally.</strong> A bank balance needs strong consistency; a
+      "likes" counter is fine eventually consistent. Mixing models within one product is normal and smart — pay for
+      consistency only where correctness demands it.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 11 — MESSAGING & ASYNC ══════════════ -->
+<div class="section" id="messaging">
+  <div class="sec-eyebrow">Building Blocks 11</div>
+  <div class="sec-title">Messaging, Queues &amp; Asynchronous Processing</div>
+  <div class="sec-sub">Async decoupling is how systems absorb spikes, stay resilient, and scale producers and consumers independently.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📨</div>
+      <div class="comp-name">Message Queue</div>
+      <div class="comp-desc">Point-to-point: one message → one consumer in a competing group. Load-levels spikes &amp; distributes work. e.g. SQS, RabbitMQ, Azure Service Bus.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📢</div>
+      <div class="comp-name">Pub/Sub (Topic)</div>
+      <div class="comp-desc">One event → many subscribers, each independent. Enables fan-out &amp; loose coupling. e.g. SNS, Service Bus topics.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📜</div>
+      <div class="comp-name">Event Streaming Log</div>
+      <div class="comp-desc">Append-only, replayable, retained log. Consumers track offsets &amp; can re-read. e.g. Kafka, Kinesis, Event Hubs.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">☠️</div>
+      <div class="comp-name">Dead-Letter Queue</div>
+      <div class="comp-desc">Where poison messages land after max retries, so one bad message can't block the pipeline. Always pair with a replay plan.</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Why async wins at scale</h4>
+      <ul>
+        <li>Decouples producer &amp; consumer in time &amp; speed</li>
+        <li>Absorbs traffic spikes (buffer, then drain)</li>
+        <li>Resilient — broker holds messages if a consumer is down</li>
+        <li>Independent scaling &amp; deployment of each side</li>
+        <li>Natural fan-out to many downstream consumers</li>
+      </ul>
+    </div>
+    <div class="panel panel-bad">
+      <h4>Costs you must handle</h4>
+      <ul>
+        <li>Eventual consistency &amp; harder reasoning</li>
+        <li>Duplicate delivery → need idempotent consumers</li>
+        <li>Ordering only within a partition/key</li>
+        <li>Visibility/debugging across hops needs tracing</li>
+        <li>Back-pressure &amp; DLQ handling required</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>The dual-write problem &amp; the Outbox pattern:</strong> writing to your DB <em>and</em> publishing to
+      a broker as two steps can fail between them → inconsistency. Fix with the <strong>Transactional Outbox</strong>:
+      write the event to an <code>outbox</code> table in the same DB transaction, then a relay reliably publishes it.
+      Make consumers idempotent (dedupe by message id) because delivery is usually <strong>at-least-once</strong>.
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🔀</div>
+    <div class="callout-body">
+      <strong>Saga pattern for distributed workflows:</strong> instead of a distributed transaction, chain local
+      transactions, each emitting an event; on failure, run <strong>compensating actions</strong> to undo prior
+      steps. <em>Choreography</em> (services react to events) is loosely coupled; <em>orchestration</em> (a central
+      coordinator) is more visible &amp; testable.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 12 — COMMUNICATION ══════════════ -->
+<div class="section" id="communication">
+  <div class="sec-eyebrow">Building Blocks 12</div>
+  <div class="sec-title">Communication — APIs &amp; Protocols</div>
+  <div class="sec-sub">How clients and services talk. Pick the protocol that matches the interaction shape (request/response, streaming, real-time).</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Style</th><th>Strengths</th><th>Use when</th></tr></thead>
+    <tbody>
+      <tr><td><strong>REST / HTTP</strong></td><td>Ubiquitous, cacheable, simple, stateless</td><td>Public APIs, CRUD, broad client support</td></tr>
+      <tr><td><strong>gRPC</strong></td><td>Binary (protobuf), fast, streaming, strong contracts</td><td>Internal service-to-service, low-latency, polyglot</td></tr>
+      <tr><td><strong>GraphQL</strong></td><td>Client picks exactly the fields; one round-trip</td><td>Rich clients, varied data needs, avoid over/under-fetch</td></tr>
+      <tr><td><strong>WebSocket</strong></td><td>Full-duplex, persistent, low-latency</td><td>Chat, gaming, live dashboards, collaboration</td></tr>
+      <tr><td><strong>SSE / Long-poll</strong></td><td>Server→client push over HTTP, simpler than WS</td><td>Notifications, feeds, one-way live updates</td></tr>
+      <tr><td><strong>Webhooks</strong></td><td>Event-driven callbacks between systems</td><td>Third-party integrations, async notifications</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🚪</div>
+    <div class="callout-body">
+      <strong>API Gateway:</strong> a single entry point that handles routing, authentication, rate limiting,
+      TLS termination, request aggregation, and versioning — so individual services don't each reimplement it.
+      A <strong>BFF (Backend-for-Frontend)</strong> tailors responses per client type (web vs mobile).
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🔢</div>
+    <div class="callout-body">
+      <strong>Idempotency &amp; versioning:</strong> design write APIs to be safely retryable (idempotency keys) so a
+      client retry after a timeout doesn't double-charge. Version your APIs (<code>/v1</code>, headers) and evolve
+      additively to avoid breaking existing clients.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 13 — ARCHITECTURAL PATTERNS ══════════════ -->
+<div class="section" id="patterns">
+  <div class="sec-eyebrow">Architecture 13</div>
+  <div class="sec-title">Architectural Patterns &amp; Styles</div>
+  <div class="sec-sub">The shapes systems take. Each optimizes for different things — there is no universally correct choice.</div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Monolith</h4>
+      <ul>
+        <li>One deployable; simple to build, test, deploy early</li>
+        <li>Fast in-process calls, easy transactions</li>
+        <li>Scales as a unit; one bug can take all down</li>
+        <li>Gets hard to evolve as the codebase &amp; team grow</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Modular Monolith</h4>
+      <ul>
+        <li>One deployable, but clear internal module boundaries</li>
+        <li>Most of the monolith's simplicity</li>
+        <li>Enforced seams ease a later split to services</li>
+        <li><strong>The recommended starting point</strong> for most</li>
+      </ul>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Microservices</h4>
+      <ul>
+        <li>Independently deployable services per capability</li>
+        <li>Independent scaling, tech choice, team ownership</li>
+        <li>Each owns its data (no shared DB)</li>
+        <li>Heavy ops, network, &amp; consistency complexity</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Event-Driven / SOA / Serverless</h4>
+      <ul>
+        <li><strong>Event-driven:</strong> components react to events, loosely coupled</li>
+        <li><strong>SOA:</strong> coarse-grained shared services + ESB</li>
+        <li><strong>Serverless (FaaS):</strong> functions, auto-scale, pay-per-use, cold starts</li>
+        <li><strong>Cell-based:</strong> isolated cells limit blast radius</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧱</div>
+    <div class="callout-body">
+      <strong>Supporting tactical patterns:</strong> <em>CQRS</em> (separate read/write models), <em>Event
+      Sourcing</em> (store changes as events), <em>Strangler Fig</em> (incrementally replace a legacy system),
+      <em>Sidecar / Service Mesh</em> (offload cross-cutting concerns like mTLS, retries to a proxy), and the
+      <em>Saga</em> &amp; <em>Outbox</em> patterns for distributed consistency.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>Conway's Law:</strong> your architecture will mirror your org's communication structure. Microservices
+      need autonomous teams to pay off — without that, you get a distributed monolith. <strong>Start with a modular
+      monolith</strong> and extract services only when a real driver (scale, team autonomy, release cadence) appears.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 14 — RELIABILITY & RESILIENCE ══════════════ -->
+<div class="section" id="reliability">
+  <div class="sec-eyebrow">Operations 14</div>
+  <div class="sec-title">Reliability, Resilience &amp; Fault Tolerance</div>
+  <div class="sec-sub">Distributed systems fail partially and constantly. Design for failure as the default state, not the exception.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔁</div>
+      <div class="comp-name">Retry + Backoff</div>
+      <div class="comp-desc">Retry transient failures with exponential backoff + jitter. Only retry idempotent ops; cap attempts to avoid amplifying an outage.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚡</div>
+      <div class="comp-name">Circuit Breaker</div>
+      <div class="comp-desc">After N failures, "open" and fail fast for a cooldown so you stop hammering a sick dependency; half-open to test recovery.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧱</div>
+      <div class="comp-name">Bulkhead</div>
+      <div class="comp-desc">Isolate resource pools so one slow/failing dependency can't starve the whole app (like watertight ship compartments).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⏱️</div>
+      <div class="comp-name">Timeout</div>
+      <div class="comp-desc">Bound every external call. A request waiting forever ties up threads/connections and cascades into a full outage.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📉</div>
+      <div class="comp-name">Graceful Degradation</div>
+      <div class="comp-desc">Shed non-essential features under stress (serve cached/stale data, hide recommendations) instead of failing entirely.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚦</div>
+      <div class="comp-name">Rate Limiting / Throttling</div>
+      <div class="comp-desc">Protect the system &amp; ensure fairness. Token bucket, leaky bucket, sliding window. Reject early with <code>429</code>.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛟</div>
+      <div class="comp-name">Redundancy &amp; Failover</div>
+      <div class="comp-desc">No single points of failure — N+1 nodes, multi-AZ/region, automatic failover with health checks.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🐒</div>
+      <div class="comp-name">Chaos Engineering</div>
+      <div class="comp-desc">Deliberately inject failures (kill nodes, add latency) in prod-like envs to prove resilience before reality does.</div>
+    </div>
+  </div>
+
+  <div class="qh"><small>Recovery objectives</small>Disaster Recovery — RTO &amp; RPO</div>
+  <table class="styled-table">
+    <thead><tr><th>Metric</th><th>Question it answers</th><th>Lower value means</th></tr></thead>
+    <tbody>
+      <tr><td><strong>RTO</strong> (Recovery Time Objective)</td><td>How fast must we be back up?</td><td>More redundancy/automation (hot standby)</td></tr>
+      <tr><td><strong>RPO</strong> (Recovery Point Objective)</td><td>How much data can we afford to lose?</td><td>More frequent replication/backups</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-amber">
+    <div class="callout-icon">🗺️</div>
+    <div class="callout-body">
+      <strong>DR strategies by cost/speed:</strong> Backup &amp; Restore (cheap, slow) → Pilot Light → Warm Standby →
+      <strong>Multi-Region Active-Active</strong> (expensive, near-zero RTO/RPO). Choose by how much an hour of
+      downtime/data-loss actually costs the business.
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>SLA / SLO / SLI:</strong> an <strong>SLI</strong> is the measured signal (e.g. p99 latency),
+      an <strong>SLO</strong> is the internal target (p99 &lt; 200 ms 99.9% of the time), and an <strong>SLA</strong>
+      is the external promise with penalties. Set SLOs first; use an <strong>error budget</strong> to balance
+      reliability work against shipping features.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 15 — OBSERVABILITY ══════════════ -->
+<div class="section" id="observability">
+  <div class="sec-eyebrow">Operations 15</div>
+  <div class="sec-title">Observability — You Can't Operate What You Can't See</div>
+  <div class="sec-sub">Monitoring tells you <em>when</em> something is wrong; observability lets you ask <em>why</em> without shipping new code.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📊</div>
+      <div class="comp-name">Metrics</div>
+      <div class="comp-desc">Numeric time-series (RPS, latency percentiles, error rate, CPU). Cheap to store, great for dashboards &amp; alerts. e.g. Prometheus, Grafana.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📝</div>
+      <div class="comp-name">Logs</div>
+      <div class="comp-desc">Discrete, structured event records. Invaluable for detail; expensive at volume. Centralize &amp; index. e.g. ELK, Loki.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧵</div>
+      <div class="comp-name">Traces</div>
+      <div class="comp-desc">Follow one request across services via a correlation/trace id. Pinpoints which hop is slow/broken. e.g. OpenTelemetry, Jaeger.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔔</div>
+      <div class="comp-name">Alerting</div>
+      <div class="comp-desc">Alert on symptoms users feel (SLO breaches), not every cause. Avoid alert fatigue — actionable, owned, runbooked.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🚦</div>
+    <div class="callout-body">
+      <strong>The Four Golden Signals (Google SRE):</strong> <strong>Latency</strong>, <strong>Traffic</strong>,
+      <strong>Errors</strong>, and <strong>Saturation</strong>. If you monitor only four things, monitor these.
+      Track latency as percentiles (p50/p95/p99), never just the mean — the average hides the pain.
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🧰</div>
+    <div class="callout-body">
+      <strong>Health checks &amp; correlation IDs:</strong> expose liveness (am I running?) and readiness (can I serve
+      traffic?) endpoints for the LB/orchestrator. Propagate a correlation ID through every hop so a single user
+      request can be reconstructed end-to-end across logs, metrics, and traces.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 16 — SECURITY & NETWORKING ══════════════ -->
+<div class="section" id="security">
+  <div class="sec-eyebrow">Operations 16</div>
+  <div class="sec-title">Security &amp; Networking Foundations</div>
+  <div class="sec-sub">Security is a cross-cutting design concern, not a final checklist. Build defence in depth and least privilege in from the start.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔑</div>
+      <div class="comp-name">AuthN vs AuthZ</div>
+      <div class="comp-desc"><strong>Authentication</strong> = who you are (OAuth2/OIDC, JWT, sessions). <strong>Authorization</strong> = what you may do (RBAC, ABAC, policies). Always enforce on the server.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔒</div>
+      <div class="comp-name">Encryption</div>
+      <div class="comp-desc">In transit (TLS everywhere, mTLS between services) and at rest (KMS-managed keys). Hash passwords (bcrypt/argon2), never store plaintext.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛡️</div>
+      <div class="comp-name">Network isolation</div>
+      <div class="comp-desc">VPC/VNet, private subnets for data tiers, security groups (stateful), NACLs (stateless), bastion hosts. Expose only what must be public.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧱</div>
+      <div class="comp-name">Edge protection</div>
+      <div class="comp-desc">WAF, DDoS protection, rate limiting, bot mitigation at the edge/CDN before traffic reaches your origin.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🔐</div>
+    <div class="callout-body">
+      <strong>Core principles:</strong> <em>least privilege</em> (grant the minimum, for code and people),
+      <em>defence in depth</em> (multiple independent layers), <em>zero trust</em> (verify every request, even
+      internal), validate &amp; sanitize all input at boundaries (OWASP Top 10), keep secrets in a vault, and patch
+      dependencies. Security failures are usually design failures.
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🌐</div>
+    <div class="callout-body">
+      <strong>Networking essentials:</strong> <strong>DNS</strong> resolves names → IPs (and enables geo/failover
+      routing); <strong>CDN</strong> caches content at the edge; <strong>reverse proxy</strong> (Nginx/Envoy)
+      terminates TLS &amp; routes; <strong>API gateway</strong> centralizes cross-cutting concerns. Latency is
+      dominated by round-trips — keep data and compute close to users.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ 17 — TRADE-OFF CHEAT SHEET ══════════════ -->
+<div class="section" id="tradeoffs">
+  <div class="sec-eyebrow">Reference 17</div>
+  <div class="sec-title">The Trade-off Cheat-Sheet</div>
+  <div class="sec-sub">Every system-design decision is a trade-off. This is the senior's mental index of the big ones.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>You want more…</th><th>You usually give up…</th><th>The lever</th></tr></thead>
+    <tbody>
+      <tr><td>Consistency</td><td>Availability / Latency</td><td>CAP / PACELC — sync replication, quorums</td></tr>
+      <tr><td>Availability</td><td>Consistency (accept staleness)</td><td>Async replication, eventual consistency</td></tr>
+      <tr><td>Lower latency</td><td>Freshness / cost</td><td>Caching, CDN, denormalization, read replicas</td></tr>
+      <tr><td>Higher throughput</td><td>Per-request latency</td><td>Batching, async queues, buffering</td></tr>
+      <tr><td>Scalability</td><td>Simplicity</td><td>Horizontal scaling, sharding, statelessness</td></tr>
+      <tr><td>Fast reads</td><td>Write performance / storage</td><td>Indexes, materialized views, denormalization</td></tr>
+      <tr><td>Fast writes</td><td>Read performance</td><td>LSM engines, write-behind cache, normalization</td></tr>
+      <tr><td>Flexibility (schema)</td><td>Query power / integrity</td><td>NoSQL document vs relational SQL</td></tr>
+      <tr><td>Strong durability</td><td>Write latency</td><td>Sync replication, fsync, multi-AZ writes</td></tr>
+      <tr><td>Loose coupling</td><td>Simplicity / consistency</td><td>Async messaging, eventual consistency</td></tr>
+      <tr><td>Team autonomy / independent deploy</td><td>Operational complexity</td><td>Microservices vs monolith</td></tr>
+      <tr><td>Cost efficiency</td><td>Performance headroom</td><td>Right-sizing, autoscaling, spot/serverless</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-body">
+      <strong>How to use it:</strong> name the requirement, find the lever, state what you're sacrificing and why
+      it's acceptable here. "This is read-heavy and tolerates 2-second staleness, so I'll add read replicas + a
+      cache and accept eventual consistency to hit the latency SLO." That sentence <em>is</em> senior system design.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">📏</div>
+    <div class="callout-body">
+      <strong>Guiding maxims:</strong> KISS (keep it simple), YAGNI (don't build for imagined needs), "premature
+      optimization is the root of all evil", and "make it work, make it right, make it fast — in that order."
+      Complexity is a cost you pay forever; add it only when the requirement demands it.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     WORKED EXAMPLES
+══════════════════════════════════════════ -->
+<div class="section" id="examples">
+  <div class="sec-eyebrow">Part B — Applied</div>
+  <div class="sec-title">Worked System Design Examples</div>
+  <div class="sec-sub">Concepts become real when applied. Here are condensed, senior-level walkthroughs of classic designs — requirements, key decisions, and the trade-offs.</div>
+
+  <!-- EXAMPLE 1 — URL SHORTENER -->
+  <div class="qh"><small>Example 1</small>TinyURL — a URL Shortener</div>
+  <p class="lead"><strong>Requirements:</strong> shorten a long URL to a unique short code; redirect on access; very read-heavy (~100:1); low latency; high availability. Analytics is a bonus.</p>
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Key decisions</h4>
+      <ul>
+        <li>Generate a unique short code: base-62 encode an auto-increment/Snowflake ID, or hash + collision check</li>
+        <li>Store <code>shortCode → longURL</code> in a key-value/SQL store; shard by code</li>
+        <li>Cache hot mappings in Redis (read-heavy → huge hit ratio)</li>
+        <li>Redirect with <code>301/302</code>; put a CDN/edge in front</li>
+        <li>Counters &amp; analytics via async events (don't block redirects)</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Trade-offs</h4>
+      <ul>
+        <li>Eventual consistency for analytics is fine</li>
+        <li>302 (no caching) for accurate clicks vs 301 (cacheable) for speed</li>
+        <li>Pre-generate ID ranges per node to avoid a write bottleneck</li>
+        <li>Read replicas + cache absorb the 100:1 read skew</li>
+      </ul>
+    </div>
+  </div>
+  <div class="diagram-card">
+    <div class="diagram-lbl">URL shortener — read path</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  U(("User")) --> CDN["CDN / Edge"]
+  CDN --> LB["Load Balancer"]
+  LB --> App["Redirect Service"]
+  App --> Cache[("Redis cache")]
+  Cache -->|miss| DB[("KV store\n(sharded)")]
+  App -->|async click| Q["Queue → Analytics"]
+</pre>
+    </div>
+  </div>
+
+  <!-- EXAMPLE 2 — NEWS FEED -->
+  <div class="qh"><small>Example 2</small>News Feed (Twitter/Instagram timeline)</div>
+  <p class="lead"><strong>Requirements:</strong> users follow others; show a personalized, recent feed fast; massive read scale; some followers have millions of fans (celebrities).</p>
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Fan-out on write (push)</h4>
+      <ul>
+        <li>On post, push the post id into every follower's feed cache</li>
+        <li>Reads are O(1) &amp; instant — great for most users</li>
+        <li>Expensive for celebrities (millions of writes per post)</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Fan-out on read (pull)</h4>
+      <ul>
+        <li>Build the feed at read time by querying followees</li>
+        <li>Cheap writes; expensive, slow reads at scale</li>
+        <li>Better for users who follow many / celebrities</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout callout-green">
+    <div class="callout-icon">🔀</div>
+    <div class="callout-body">
+      <strong>The real answer is hybrid:</strong> fan-out-on-write for normal users (fast reads), but
+      fan-out-on-read for celebrity accounts (avoid the write storm) — merge the two at read time. Cache feeds in
+      Redis, store posts in a wide-column store, precompute ranking, and accept eventual consistency (a few seconds
+      of lag is fine for a feed).
+    </div>
+  </div>
+
+  <!-- EXAMPLE 3 — CHAT -->
+  <div class="qh"><small>Example 3</small>Real-Time Chat (WhatsApp/Slack)</div>
+  <p class="lead"><strong>Requirements:</strong> 1:1 &amp; group messaging, real-time delivery, online presence, delivery/read receipts, message history, ordering.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Transport:</strong> persistent <strong>WebSocket</strong> connections via a gateway layer for bidirectional, low-latency push.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Routing:</strong> a message goes gateway → message service → recipient's connected gateway (via a pub/sub bus like Redis/Kafka so any gateway can reach any user).</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Storage:</strong> persist messages in a write-optimized wide-column store (Cassandra) partitioned by conversation; order by a time-based id.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Offline:</strong> if the recipient is offline, queue the message and push a notification; deliver on reconnect.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>Presence:</strong> track online/last-seen in Redis with heartbeats &amp; TTLs.</div></div>
+  </div>
+  <div class="callout callout-amber">
+    <div class="callout-icon">📩</div>
+    <div class="callout-body">
+      <strong>Ordering &amp; delivery:</strong> guarantee order <em>within a conversation</em> using monotonic
+      message ids (Snowflake). Use acks + client retries for at-least-once delivery, and dedupe by message id. Group
+      chat = fan-out the message to all members' gateways.
+    </div>
+  </div>
+
+  <!-- EXAMPLE 4 — RATE LIMITER -->
+  <div class="qh"><small>Example 4</small>Distributed Rate Limiter</div>
+  <p class="lead"><strong>Requirements:</strong> limit each client to N requests per window across a fleet of servers; low latency; fail open or closed by policy.</p>
+  <table class="styled-table">
+    <thead><tr><th>Algorithm</th><th>Behaviour</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Token bucket</strong></td><td>Tokens refill at a steady rate; each request spends one</td><td>Allows bursts up to bucket size; most popular</td></tr>
+      <tr><td><strong>Leaky bucket</strong></td><td>Requests drain at a fixed rate; overflow rejected</td><td>Smooths bursts into a steady stream</td></tr>
+      <tr><td><strong>Fixed window</strong></td><td>Count per fixed interval</td><td>Simple but allows 2× burst at window edges</td></tr>
+      <tr><td><strong>Sliding window</strong></td><td>Rolling count over the last interval</td><td>Smoother &amp; fairer; slightly more state</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-blue">
+    <div class="callout-icon">⚡</div>
+    <div class="callout-body">
+      <strong>Distributed implementation:</strong> keep counters in <strong>Redis</strong> (atomic <code>INCR</code>
+      + TTL, or a Lua script for token bucket) so all nodes share state. Reject over-limit with HTTP <code>429</code>
+      + <code>Retry-After</code>. Decide <strong>fail-open</strong> (allow if Redis is down — availability) vs
+      <strong>fail-closed</strong> (block — protection) per the use-case.
+    </div>
+  </div>
+
+  <!-- EXAMPLE 5 — VIDEO / FILE STORAGE -->
+  <div class="qh"><small>Example 5</small>Video Streaming &amp; Large File Storage (YouTube/Netflix)</div>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Upload &amp; store:</strong> raw files in object storage (S3); metadata (title, owner, URLs) in a database.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Transcode</strong> asynchronously into multiple resolutions/bitrates via a queue + worker fleet (adaptive bitrate streaming, HLS/DASH).</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Deliver</strong> via CDN — segments cached at the edge near users; the player adapts quality to bandwidth.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Scale reads</strong> with the CDN (origin barely touched); use presigned URLs for secure, direct-to-storage access.</div></div>
+  </div>
+  <div class="callout callout-purple">
+    <div class="callout-icon">🎬</div>
+    <div class="callout-body">
+      <strong>Pattern reuse:</strong> notice how the same building blocks recombine — object storage + metadata DB,
+      async queues for heavy work, CDN for read scale, and adaptive streaming for variable networks. Most "new"
+      designs are just the fundamentals composed for a new problem.
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">✅</div>
+    <div class="callout-body">
+      <strong>The meta-lesson:</strong> almost every large-scale system reduces to the same toolkit — load balancers,
+      stateless app tiers, caches, the right database with replication &amp; sharding, async queues, a CDN, and
+      thoughtful consistency choices. Master the building blocks and the trade-offs, and you can design anything by
+      composing them to fit the requirements.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  System Design Field Guide &nbsp;·&nbsp; Concepts, Trade-offs &amp; Real Architectures &nbsp;·&nbsp;
+  <a href="index.html">← AI Architecture Guide</a> &nbsp;·&nbsp;
+  <a href="dotnet-questions.html">.NET Guide</a> &nbsp;·&nbsp;
+  <a href="clean-code-design-patterns.html">Clean Code</a> &nbsp;·&nbsp;
+  <a href="data-structures-algorithms.html">DSA</a> &nbsp;·&nbsp;
+  <a href="devops-cicd-cloud.html">DevOps</a> &nbsp;·&nbsp;
+  <a href="api-design.html">API Design</a> &nbsp;·&nbsp;
+  <a href="database-deep-dive.html">Databases</a>
+</footer>
+
+<script>
+  // Back-to-top visibility
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.classList.toggle('visible', window.scrollY > 600);
+  });
+</script>
+
+</body>
+</html>

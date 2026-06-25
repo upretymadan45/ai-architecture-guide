@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevOps, CI/CD &amp; Cloud — Senior Engineering Guide</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(139,92,246,.13);
+      border: 1px solid rgba(139,92,246,.3);
+      color: var(--purple-l);
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px;
+    }
+    .hero p { font-size: 1.1rem; color: var(--t2); max-width: 760px; margin: 0 auto 40px; }
+
+    /* NAV */
+    .nav {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      padding: 0 40px 44px; position: relative; z-index: 1;
+    }
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: 100px;
+      border: 1px solid var(--border); background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500; backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1); transform: translateY(-2px);
+    }
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* CONTAINER */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px 96px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+    .sec-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+    .sec-title { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: var(--t1); margin-bottom: 10px; }
+    .sec-sub { font-size: 1rem; color: var(--t2); max-width: 800px; margin-bottom: 32px; }
+
+    /* SUB-HEADING */
+    .qh {
+      font-size: 1.15rem; font-weight: 700; color: var(--t1);
+      margin: 36px 0 14px; padding-left: 14px; border-left: 3px solid var(--blue);
+      line-height: 1.4;
+    }
+    .qh small { display: block; font-size: 12px; font-weight: 600; color: var(--blue-l); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+
+    .lead { font-size: 14.5px; color: var(--t2); margin-bottom: 16px; }
+    .lead strong { color: var(--t1); }
+
+    /* CARD GRID */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .comp-card { background: rgba(59,130,246,.04); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all .25s; }
+    .comp-card:hover { background: rgba(59,130,246,.09); border-color: var(--border-h); transform: translateY(-3px); }
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+    .comp-name { font-size: 13.5px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .comp-desc code { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+    /* CODE BLOCK */
+    .code {
+      background: #0a1424;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px; line-height: 1.7;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    .code .cmt { color: #64748b; font-style: italic; }
+    .code .kw  { color: #c4b5fd; }
+    .code .ty  { color: #67e8f9; }
+    .code .st  { color: #6ee7b7; }
+    .code .nm  { color: #fcd34d; }
+    .code .bad { color: #fda4af; }
+    .code .good{ color: #6ee7b7; }
+    .code-label {
+      display: inline-block; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 6px; margin-bottom: -6px;
+    }
+    .cl-bad  { background: rgba(244,63,94,.12); color: #fda4af; border: 1px solid rgba(244,63,94,.3); }
+    .cl-good { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .cl-neutral { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+    /* INLINE CODE */
+    p code, li code, td code, .lead code, .step-txt code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: rgba(59,130,246,.10); color: #93c5fd;
+      padding: 1px 6px; border-radius: 5px;
+    }
+
+    /* CALLOUT */
+    .callout { padding: 18px 22px; border-radius: 12px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .callout-blue  { background: rgba(59,130,246,.08); border-left: 3px solid var(--blue); }
+    .callout-green { background: rgba(16,185,129,.08); border-left: 3px solid var(--emerald); }
+    .callout-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--amber); }
+    .callout-purple{ background: rgba(139,92,246,.08); border-left: 3px solid var(--purple); }
+    .callout-rose  { background: rgba(244,63,94,.08);  border-left: 3px solid var(--rose); }
+    .callout-icon  { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body  { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+    .callout-body strong { color: var(--t1); }
+    .callout-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,.06); color: #93c5fd; padding: 1px 6px; border-radius: 5px; }
+
+    /* TABLE */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .styled-table th {
+      background: rgba(59,130,246,.12); color: var(--blue-l);
+      font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(59,130,246,.25);
+    }
+    .styled-table td { padding: 11px 16px; font-size: 13px; color: var(--t2); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .styled-table tr:hover td { background: rgba(59,130,246,.04); }
+    .styled-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(59,130,246,.10); color: #93c5fd; padding: 1px 5px; border-radius: 4px; }
+
+    /* STEPS */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin: 18px 0; }
+    .step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; }
+    .step-n { min-width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+    .panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: .04em; }
+    .panel ul { list-style: none; }
+    .panel ul li { font-size: 13px; color: var(--t2); padding: 5px 0 5px 20px; position: relative; line-height: 1.55; }
+    .panel ul li::before { position: absolute; left: 0; }
+    .panel-bad { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .panel-bad h4 { color: #fda4af; }
+    .panel-bad ul li::before { content: '✕'; color: var(--rose); }
+    .panel-good { background: rgba(16,185,129,.05); border-color: rgba(16,185,129,.25); }
+    .panel-good h4 { color: #6ee7b7; }
+    .panel-good ul li::before { content: '✓'; color: var(--emerald); }
+    .panel-neutral { background: rgba(59,130,246,.05); border-color: rgba(59,130,246,.25); }
+    .panel-neutral h4 { color: #93c5fd; }
+    .panel-neutral ul li::before { content: '→'; color: var(--blue-l); }
+
+    /* DIAGRAM */
+    .diagram-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin: 20px 0; }
+    .diagram-lbl { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+    .diagram-box { background: #ffffff; border-radius: 10px; padding: 24px; overflow-x: auto; }
+
+    /* TAGS */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tag { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 500; border: 1px solid; }
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 56px 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 40px; border-top: 1px solid var(--border); color: var(--t3); font-size: 13px; }
+    footer a { color: var(--blue-l); text-decoration: none; }
+
+    /* BACK TO TOP */
+    .btt { position: fixed; bottom: 28px; right: 28px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 20px rgba(59,130,246,.4); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+    .btt.visible { opacity: 1; pointer-events: auto; }
+    .btt:hover { transform: translateY(-3px); }
+
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btt" id="btt" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge"><span></span> DevOps &amp; Cloud Field Guide</div>
+  <h1>DevOps, CI/CD<br>&amp; Cloud Delivery</h1>
+  <p>
+    How modern software ships: the culture, the pipeline from commit to production, containers &amp; orchestration,
+    infrastructure as code, deployment strategies, and the observability that keeps it all healthy — with the
+    trade-offs a senior weighs at each stage.
+  </p>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="#culture">    <span class="dot" style="background:#3b82f6"></span> DevOps Culture</a>
+  <a href="#cicd">       <span class="dot" style="background:#8b5cf6"></span> CI/CD Pipeline</a>
+  <a href="#containers"> <span class="dot" style="background:#06b6d4"></span> Containers</a>
+  <a href="#k8s">        <span class="dot" style="background:#10b981"></span> Kubernetes</a>
+  <a href="#iac">        <span class="dot" style="background:#f59e0b"></span> Infrastructure as Code</a>
+  <a href="#deploy">     <span class="dot" style="background:#f43f5e"></span> Deployment Strategies</a>
+  <a href="#observability"><span class="dot" style="background:#a78bfa"></span> Observability &amp; SRE</a>
+  <a href="#security">   <span class="dot" style="background:#06b6d4"></span> DevSecOps</a>
+</div>
+
+<div class="wrap">
+
+<!-- 01 CULTURE -->
+<div class="section" id="culture">
+  <div class="sec-eyebrow">Foundation 01</div>
+  <div class="sec-title">DevOps Culture — Not a Tool, a Way of Working</div>
+  <div class="sec-sub">DevOps removes the wall between "dev" and "ops": shared ownership of building <em>and</em> running software, with fast feedback and automation everywhere.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🤝</div>
+      <div class="comp-name">Shared ownership</div>
+      <div class="comp-desc">"You build it, you run it." Teams own their service end-to-end — code, deploy, on-call. Removes hand-off friction &amp; blame.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔄</div>
+      <div class="comp-name">Fast feedback</div>
+      <div class="comp-desc">Short loops: automated tests, quick deploys, real-time monitoring. Find &amp; fix problems in minutes, not weeks.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🤖</div>
+      <div class="comp-name">Automate everything</div>
+      <div class="comp-desc">Builds, tests, deploys, infra. Humans for judgement, machines for repetition — fewer errors, more speed.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📉</div>
+      <div class="comp-name">Blameless culture</div>
+      <div class="comp-desc">Failures are system problems, not people problems. Blameless post-mortems → learning &amp; prevention, not finger-pointing.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">📊</div>
+    <div class="callout-body">
+      <strong>The DORA metrics</strong> measure delivery performance: <strong>Deployment Frequency</strong>,
+      <strong>Lead Time for Changes</strong>, <strong>Change Failure Rate</strong>, and <strong>Mean Time to
+      Recovery (MTTR)</strong>. Elite teams deploy often, with short lead times, low failure rates, and fast
+      recovery — and research shows these correlate with business success.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 02 CI/CD -->
+<div class="section" id="cicd">
+  <div class="sec-eyebrow">Pipeline 02</div>
+  <div class="sec-title">CI/CD — From Commit to Production</div>
+  <div class="sec-sub">Continuous Integration merges &amp; verifies changes constantly; Continuous Delivery/Deployment automates the path to production.</div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Continuous Integration (CI)</h4>
+      <ul>
+        <li>Merge to main frequently (small changes)</li>
+        <li>Every push triggers build + automated tests</li>
+        <li>Catch integration bugs early, keep main green</li>
+        <li>Static analysis, linting, security scans</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Continuous Delivery / Deployment (CD)</h4>
+      <ul>
+        <li><strong>Delivery:</strong> always release-ready; deploy is one click</li>
+        <li><strong>Deployment:</strong> every green build auto-ships to prod</li>
+        <li>Automated, repeatable, auditable releases</li>
+        <li>Fast rollback if something goes wrong</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">A typical pipeline</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  C["Commit / PR"] --> B["Build"]
+  B --> T["Unit + Integration\nTests"]
+  T --> SA["Static Analysis\n+ Security Scan"]
+  SA --> A["Artifact / Image\n(versioned)"]
+  A --> ST["Deploy → Staging"]
+  ST --> AT["Acceptance /\nSmoke Tests"]
+  AT --> PR["Deploy → Prod\n(canary / blue-green)"]
+  PR --> M["Monitor + Rollback"]
+</pre>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">⚙️</div>
+    <div class="callout-body">
+      <strong>Pipeline principles:</strong> build once, promote the <em>same artifact</em> through environments
+      (never rebuild per stage); fail fast (cheap checks first); keep it fast (parallelize, cache dependencies);
+      make it the <em>only</em> path to prod. Tools: GitHub Actions, GitLab CI, Azure DevOps, Jenkins.
+    </div>
+  </div>
+
+  <span class="code-label cl-neutral">GitHub Actions — minimal CI workflow</span>
+  <div class="code"><span class="ty">name</span>: ci
+<span class="ty">on</span>: [push, pull_request]
+<span class="ty">jobs</span>:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: <span class="st">'8.0'</span> }
+      - run: dotnet restore
+      - run: dotnet build --no-restore -c Release
+      - run: dotnet test --no-build -c Release   <span class="cmt"># fail fast on red tests</span></div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 03 CONTAINERS -->
+<div class="section" id="containers">
+  <div class="sec-eyebrow">Packaging 03</div>
+  <div class="sec-title">Containers — "Works on My Machine," Solved</div>
+  <div class="sec-sub">A container packages an app with its dependencies into one portable, isolated unit that runs identically everywhere.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Containers (Docker)</h4>
+      <ul>
+        <li>Share the host OS kernel — lightweight, fast start</li>
+        <li>MBs in size; seconds to launch</li>
+        <li>Consistent across dev → CI → prod</li>
+        <li>Ideal unit for microservices &amp; scaling</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Virtual Machines</h4>
+      <ul>
+        <li>Full guest OS per VM — strong isolation</li>
+        <li>GBs in size; minutes to boot</li>
+        <li>Heavier, but stronger security boundary</li>
+        <li>Better for mixed OS / strict isolation needs</li>
+      </ul>
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Multi-stage Dockerfile — small, secure image</span>
+  <div class="code"><span class="cmt"># Build stage — has the full SDK</span>
+<span class="kw">FROM</span> mcr.microsoft.com/dotnet/sdk:8.0 <span class="kw">AS</span> build
+<span class="kw">WORKDIR</span> /src
+<span class="kw">COPY</span> . .
+<span class="kw">RUN</span> dotnet publish -c Release -o /app
+
+<span class="cmt"># Runtime stage — tiny, no build tools shipped</span>
+<span class="kw">FROM</span> mcr.microsoft.com/dotnet/aspnet:8.0
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> --from=build /app .
+<span class="kw">USER</span> app                       <span class="cmt"># run as non-root</span>
+<span class="kw">ENTRYPOINT</span> [<span class="st">"dotnet"</span>, <span class="st">"MyApi.dll"</span>]</div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🛡️</div>
+    <div class="callout-body">
+      <strong>Image best practices:</strong> use multi-stage builds (don't ship the SDK), pin base-image versions,
+      run as a non-root user, keep images minimal (smaller = faster pulls + smaller attack surface), scan for
+      vulnerabilities, and never bake secrets into layers. <code>.dockerignore</code> to keep the context lean.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 04 KUBERNETES -->
+<div class="section" id="k8s">
+  <div class="sec-eyebrow">Orchestration 04</div>
+  <div class="sec-title">Kubernetes — Orchestrating Containers at Scale</div>
+  <div class="sec-sub">When you have many containers across many machines, you need an orchestrator to schedule, heal, scale, and network them. K8s is the standard.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📦</div>
+      <div class="comp-name">Pod</div>
+      <div class="comp-desc">The smallest deployable unit — one or more containers sharing network/storage. Usually one app container per pod.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔁</div>
+      <div class="comp-name">Deployment</div>
+      <div class="comp-desc">Declares desired state (N replicas of an image). K8s reconciles reality to match — self-healing &amp; rolling updates.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🌐</div>
+      <div class="comp-name">Service</div>
+      <div class="comp-desc">A stable network endpoint &amp; load balancer over a changing set of pods. Decouples callers from pod IPs.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚪</div>
+      <div class="comp-name">Ingress</div>
+      <div class="comp-desc">HTTP(S) routing into the cluster — host/path rules, TLS termination — to the right Service.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📈</div>
+      <div class="comp-name">HPA (Autoscaler)</div>
+      <div class="comp-desc">Horizontal Pod Autoscaler adds/removes pods based on CPU/memory/custom metrics.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔐</div>
+      <div class="comp-name">ConfigMap / Secret</div>
+      <div class="comp-desc">Inject configuration &amp; secrets into pods without rebuilding images. Keep config out of code.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧭</div>
+    <div class="callout-body">
+      <strong>The declarative model is the big idea:</strong> you describe the <em>desired state</em> in YAML; the
+      control loop continuously reconciles actual → desired. A pod dies? It's recreated. A node fails? Pods
+      reschedule. You declare "what", K8s figures out "how" and keeps it true.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>Kubernetes is powerful but heavy.</strong> It's a steep operational investment — don't reach for it
+      for a single small service. Managed options (EKS, AKS, GKE) reduce the burden; serverless containers (Cloud
+      Run, ECS Fargate, Container Apps) or a PaaS may be the simpler, cheaper fit until scale demands K8s.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 05 IAC -->
+<div class="section" id="iac">
+  <div class="sec-eyebrow">Automation 05</div>
+  <div class="sec-title">Infrastructure as Code (IaC)</div>
+  <div class="sec-sub">Define servers, networks, and services in version-controlled files instead of clicking in a console. Reproducible, reviewable, automatable.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Why IaC</h4>
+      <ul>
+        <li>Reproducible environments (dev = staging = prod)</li>
+        <li>Versioned, peer-reviewed, auditable changes</li>
+        <li>No "snowflake" servers or config drift</li>
+        <li>Disaster recovery = re-run the code</li>
+        <li>Self-documenting infrastructure</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Declarative vs Imperative</h4>
+      <ul>
+        <li><strong>Declarative</strong> (Terraform, Bicep, CloudFormation): describe the end state, tool computes the diff</li>
+        <li><strong>Imperative</strong> (scripts, Ansible tasks): list the steps to run</li>
+        <li>Declarative is preferred — idempotent &amp; drift-aware</li>
+        <li>GitOps: Git is the source of truth, auto-applied</li>
+      </ul>
+    </div>
+  </div>
+
+  <span class="code-label cl-neutral">Terraform — declarative, idempotent</span>
+  <div class="code"><span class="kw">resource</span> <span class="st">"aws_s3_bucket"</span> <span class="st">"assets"</span> {
+  bucket = <span class="st">"my-app-assets"</span>
+  tags   = { Environment = <span class="st">"prod"</span> }
+}
+<span class="cmt"># `terraform plan` shows the diff; `apply` makes reality match.</span>
+<span class="cmt"># Run it twice → no change (idempotent).</span></div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">📌</div>
+    <div class="callout-body">
+      <strong>IaC best practices:</strong> keep state secure &amp; locked (remote backend), modularize reusable
+      components, never edit infra by hand (it causes drift), review plans before apply, and treat infra code with
+      the same rigor as app code — tests, CI, peer review.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 06 DEPLOYMENT STRATEGIES -->
+<div class="section" id="deploy">
+  <div class="sec-eyebrow">Release 06</div>
+  <div class="sec-title">Deployment Strategies — Ship Without Downtime</div>
+  <div class="sec-sub">How you roll out a new version determines your blast radius when something goes wrong.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Strategy</th><th>How it works</th><th>Trade-off</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rolling</strong></td><td>Replace instances gradually, a few at a time</td><td>No downtime, simple; mixed versions briefly</td></tr>
+      <tr><td><strong>Blue-Green</strong></td><td>Two identical envs; switch traffic all at once</td><td>Instant rollback; doubles infra cost</td></tr>
+      <tr><td><strong>Canary</strong></td><td>Release to a small % of users, watch metrics, ramp up</td><td>Limits blast radius; needs good monitoring &amp; routing</td></tr>
+      <tr><td><strong>Feature Flags</strong></td><td>Deploy code dark, toggle features on per cohort</td><td>Decouples deploy from release; flag debt to manage</td></tr>
+      <tr><td><strong>Shadow</strong></td><td>Mirror real traffic to the new version without serving it</td><td>Safe real-world test; extra infra &amp; complexity</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🐤</div>
+    <div class="callout-body">
+      <strong>Canary + feature flags is the modern default.</strong> Deploy the artifact safely (canary watches
+      error rate &amp; latency, auto-rolls-back on regression), and control <em>feature exposure</em> separately with
+      flags — so "deploy" and "release" become independent, low-risk events. Roll back a feature instantly without a
+      redeploy.
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🗄️</div>
+    <div class="callout-body">
+      <strong>Database migrations are the hard part of zero-downtime.</strong> Use the <strong>expand/contract</strong>
+      pattern: add new columns/tables (backward-compatible) → deploy code that writes both → backfill → switch reads →
+      remove the old. Never make a breaking schema change in the same release that depends on it.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 07 OBSERVABILITY -->
+<div class="section" id="observability">
+  <div class="sec-eyebrow">Operations 07</div>
+  <div class="sec-title">Observability &amp; SRE</div>
+  <div class="sec-sub">Once it's running, you have to <em>see</em> it. Observability + Site Reliability Engineering keep production healthy and improve it over time.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📊</div>
+      <div class="comp-name">Metrics</div>
+      <div class="comp-desc">Numeric time-series — RPS, latency percentiles, error rate, saturation. Cheap, great for dashboards/alerts. Prometheus + Grafana.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📝</div>
+      <div class="comp-name">Logs</div>
+      <div class="comp-desc">Structured event records for detail. Centralize &amp; index (ELK/Loki). Expensive at volume — sample wisely.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧵</div>
+      <div class="comp-name">Traces</div>
+      <div class="comp-desc">Follow one request across services via a trace id. Pinpoints the slow/broken hop. OpenTelemetry, Jaeger.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔔</div>
+      <div class="comp-name">Alerting</div>
+      <div class="comp-desc">Alert on user-facing symptoms (SLO breaches), not noise. Every alert: actionable, owned, runbooked.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>SRE core ideas:</strong> define <strong>SLIs</strong> (measured signals), set <strong>SLOs</strong>
+      (targets, e.g. 99.9% of requests &lt; 200 ms), and spend the <strong>error budget</strong> deliberately — if
+      you're within budget, ship faster; if you've burnt it, focus on reliability. Toil (manual, repetitive work) is
+      the enemy — automate it away.
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🚦</div>
+    <div class="callout-body">
+      <strong>Four Golden Signals:</strong> Latency, Traffic, Errors, Saturation. Health checks (liveness +
+      readiness) let the orchestrator route around sick instances. Propagate a correlation ID through every hop so a
+      single request can be reconstructed across logs, metrics, and traces.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 08 DEVSECOPS -->
+<div class="section" id="security">
+  <div class="sec-eyebrow">Security 08</div>
+  <div class="sec-title">DevSecOps — Shift Security Left</div>
+  <div class="sec-sub">Bake security into the pipeline from the start instead of bolting it on at the end. Automated, continuous, everyone's job.</div>
+
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>SAST</strong> — static analysis scans your source for vulnerabilities on every commit.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>SCA / dependency scanning</strong> — flag known-vulnerable libraries (<code>dotnet list package --vulnerable</code>, Dependabot, Snyk).</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Container &amp; image scanning</strong> — check base images &amp; layers for CVEs before they ship.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Secret scanning</strong> — block commits that contain keys/tokens; store secrets in a vault.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>DAST</strong> — dynamic testing against the running app in staging.</div></div>
+    <div class="step"><div class="step-n">6</div><div class="step-txt"><strong>Policy as code</strong> — enforce guardrails (no public buckets, encryption on) automatically in CI.</div></div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🔐</div>
+    <div class="callout-body">
+      <strong>Core principles:</strong> least privilege for pipelines &amp; runtime, secrets in a managed vault
+      (never in code/images), sign &amp; verify artifacts (supply-chain integrity, SLSA), immutable infrastructure
+      (replace, don't patch in place), and automate compliance. Security that's automated is security that actually
+      happens — manual checks get skipped under deadline pressure.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  Senior Engineering Guide &nbsp;·&nbsp; DevOps, CI/CD &amp; Cloud &nbsp;·&nbsp;
+  <a href="index.html">← AI Architecture Guide</a> &nbsp;·&nbsp;
+  <a href="dotnet-questions.html">.NET Guide</a> &nbsp;·&nbsp;
+  <a href="system-design-concepts.html">System Design</a> &nbsp;·&nbsp;
+  <a href="clean-code-design-patterns.html">Clean Code</a> &nbsp;·&nbsp;
+  <a href="data-structures-algorithms.html">DSA</a>
+</footer>
+
+<script>
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.classList.toggle('visible', window.scrollY > 600);
+  });
+</script>
+
+</body>
+</html>

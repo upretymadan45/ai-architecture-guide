@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Database Deep Dive — Senior Engineering Guide</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(139,92,246,.13);
+      border: 1px solid rgba(139,92,246,.3);
+      color: var(--purple-l);
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px;
+    }
+    .hero p { font-size: 1.1rem; color: var(--t2); max-width: 760px; margin: 0 auto 40px; }
+
+    /* NAV */
+    .nav {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      padding: 0 40px 44px; position: relative; z-index: 1;
+    }
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: 100px;
+      border: 1px solid var(--border); background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500; backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1); transform: translateY(-2px);
+    }
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* CONTAINER */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px 96px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+    .sec-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+    .sec-title { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: var(--t1); margin-bottom: 10px; }
+    .sec-sub { font-size: 1rem; color: var(--t2); max-width: 800px; margin-bottom: 32px; }
+
+    /* SUB-HEADING */
+    .qh {
+      font-size: 1.15rem; font-weight: 700; color: var(--t1);
+      margin: 36px 0 14px; padding-left: 14px; border-left: 3px solid var(--blue);
+      line-height: 1.4;
+    }
+    .qh small { display: block; font-size: 12px; font-weight: 600; color: var(--blue-l); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+
+    .lead { font-size: 14.5px; color: var(--t2); margin-bottom: 16px; }
+    .lead strong { color: var(--t1); }
+
+    /* CARD GRID */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .comp-card { background: rgba(59,130,246,.04); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all .25s; }
+    .comp-card:hover { background: rgba(59,130,246,.09); border-color: var(--border-h); transform: translateY(-3px); }
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+    .comp-name { font-size: 13.5px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .comp-desc code { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+    /* CODE BLOCK */
+    .code {
+      background: #0a1424;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px; line-height: 1.7;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    .code .cmt { color: #64748b; font-style: italic; }
+    .code .kw  { color: #c4b5fd; }
+    .code .ty  { color: #67e8f9; }
+    .code .st  { color: #6ee7b7; }
+    .code .nm  { color: #fcd34d; }
+    .code .bad { color: #fda4af; }
+    .code .good{ color: #6ee7b7; }
+    .code-label {
+      display: inline-block; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 6px; margin-bottom: -6px;
+    }
+    .cl-bad  { background: rgba(244,63,94,.12); color: #fda4af; border: 1px solid rgba(244,63,94,.3); }
+    .cl-good { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .cl-neutral { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+    /* INLINE CODE */
+    p code, li code, td code, .lead code, .step-txt code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: rgba(59,130,246,.10); color: #93c5fd;
+      padding: 1px 6px; border-radius: 5px;
+    }
+
+    /* CALLOUT */
+    .callout { padding: 18px 22px; border-radius: 12px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .callout-blue  { background: rgba(59,130,246,.08); border-left: 3px solid var(--blue); }
+    .callout-green { background: rgba(16,185,129,.08); border-left: 3px solid var(--emerald); }
+    .callout-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--amber); }
+    .callout-purple{ background: rgba(139,92,246,.08); border-left: 3px solid var(--purple); }
+    .callout-rose  { background: rgba(244,63,94,.08);  border-left: 3px solid var(--rose); }
+    .callout-icon  { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body  { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+    .callout-body strong { color: var(--t1); }
+    .callout-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,.06); color: #93c5fd; padding: 1px 6px; border-radius: 5px; }
+
+    /* TABLE */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .styled-table th {
+      background: rgba(59,130,246,.12); color: var(--blue-l);
+      font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(59,130,246,.25);
+    }
+    .styled-table td { padding: 11px 16px; font-size: 13px; color: var(--t2); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .styled-table tr:hover td { background: rgba(59,130,246,.04); }
+    .styled-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(59,130,246,.10); color: #93c5fd; padding: 1px 5px; border-radius: 4px; }
+
+    /* STEPS */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin: 18px 0; }
+    .step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; }
+    .step-n { min-width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+    .panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: .04em; }
+    .panel ul { list-style: none; }
+    .panel ul li { font-size: 13px; color: var(--t2); padding: 5px 0 5px 20px; position: relative; line-height: 1.55; }
+    .panel ul li::before { position: absolute; left: 0; }
+    .panel-bad { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .panel-bad h4 { color: #fda4af; }
+    .panel-bad ul li::before { content: '✕'; color: var(--rose); }
+    .panel-good { background: rgba(16,185,129,.05); border-color: rgba(16,185,129,.25); }
+    .panel-good h4 { color: #6ee7b7; }
+    .panel-good ul li::before { content: '✓'; color: var(--emerald); }
+    .panel-neutral { background: rgba(59,130,246,.05); border-color: rgba(59,130,246,.25); }
+    .panel-neutral h4 { color: #93c5fd; }
+    .panel-neutral ul li::before { content: '→'; color: var(--blue-l); }
+
+    /* DIAGRAM */
+    .diagram-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin: 20px 0; }
+    .diagram-lbl { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+    .diagram-box { background: #ffffff; border-radius: 10px; padding: 24px; overflow-x: auto; }
+
+    /* TAGS */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tag { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 500; border: 1px solid; }
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 56px 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 40px; border-top: 1px solid var(--border); color: var(--t3); font-size: 13px; }
+    footer a { color: var(--blue-l); text-decoration: none; }
+
+    /* BACK TO TOP */
+    .btt { position: fixed; bottom: 28px; right: 28px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 20px rgba(59,130,246,.4); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+    .btt.visible { opacity: 1; pointer-events: auto; }
+    .btt:hover { transform: translateY(-3px); }
+
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btt" id="btt" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge"><span></span> Database Field Guide</div>
+  <h1>Database<br>Deep Dive</h1>
+  <p>
+    What separates "it works" from "it scales": how indexes really work, ACID and isolation levels, locking and MVCC,
+    reading a query plan, the normalization vs denormalization call, partitioning, connection pooling, and the SQL vs
+    NoSQL decision — with the trade-offs a senior weighs.
+  </p>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="#indexing">    <span class="dot" style="background:#3b82f6"></span> Indexing</a>
+  <a href="#acid">        <span class="dot" style="background:#8b5cf6"></span> Transactions &amp; ACID</a>
+  <a href="#isolation">   <span class="dot" style="background:#06b6d4"></span> Isolation Levels</a>
+  <a href="#locking">     <span class="dot" style="background:#10b981"></span> Locking &amp; MVCC</a>
+  <a href="#query">       <span class="dot" style="background:#f59e0b"></span> Query Optimization</a>
+  <a href="#modeling">    <span class="dot" style="background:#f43f5e"></span> Normalization</a>
+  <a href="#scaling">     <span class="dot" style="background:#a78bfa"></span> Partitioning &amp; Scaling</a>
+  <a href="#sqlnosql">    <span class="dot" style="background:#06b6d4"></span> SQL vs NoSQL</a>
+</div>
+
+<div class="wrap">
+
+<!-- 01 INDEXING -->
+<div class="section" id="indexing">
+  <div class="sec-eyebrow">Performance 01</div>
+  <div class="sec-title">Indexing — The #1 Performance Lever</div>
+  <div class="sec-sub">An index is a sorted data structure that lets the DB find rows without scanning the whole table — turning <code>O(n)</code> scans into <code>O(log n)</code> lookups.</div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>B-Tree index (default)</h4>
+      <ul>
+        <li>Balanced tree, sorted keys</li>
+        <li>Great for equality &amp; range queries</li>
+        <li>Powers <code>WHERE</code>, <code>ORDER BY</code>, joins</li>
+        <li>The default in Postgres, MySQL, SQL Server</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>LSM-Tree index</h4>
+      <ul>
+        <li>Write-optimized (sequential writes, compaction)</li>
+        <li>Used by Cassandra, RocksDB, many NoSQL stores</li>
+        <li>Fast ingest; reads may touch multiple levels</li>
+        <li>Trades read amplification for write throughput</li>
+      </ul>
+    </div>
+  </div>
+
+  <table class="styled-table">
+    <thead><tr><th>Index type</th><th>Use for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Composite</strong></td><td>Multi-column filters — order matters (leftmost-prefix rule)</td></tr>
+      <tr><td><strong>Covering</strong></td><td>Index includes all queried columns → no table lookup</td></tr>
+      <tr><td><strong>Unique</strong></td><td>Enforce uniqueness + speed lookups</td></tr>
+      <tr><td><strong>Partial / filtered</strong></td><td>Index only rows matching a condition (e.g. <code>WHERE active = true</code>)</td></tr>
+      <tr><td><strong>Hash</strong></td><td>Equality-only, very fast point lookups</td></tr>
+      <tr><td><strong>GIN / inverted</strong></td><td>Full-text search, arrays, JSON</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>Indexes aren't free.</strong> They speed reads but slow writes (every insert/update maintains the
+      index) and consume storage. Index the columns you filter, join, and sort on — not every column. The
+      <strong>leftmost-prefix rule</strong>: a composite index on <code>(a, b, c)</code> helps queries on <code>a</code>,
+      <code>a,b</code>, or <code>a,b,c</code> — but not on <code>b</code> alone.
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🚫</div>
+    <div class="callout-body">
+      <strong>Index killers:</strong> wrapping a column in a function (<code>WHERE UPPER(name) = …</code>), leading
+      wildcards (<code>LIKE '%foo'</code>), implicit type casts, or <code>OR</code> across different columns can all
+      force a full scan despite an index existing. Check the query plan to confirm the index is actually used.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 02 ACID -->
+<div class="section" id="acid">
+  <div class="sec-eyebrow">Correctness 02</div>
+  <div class="sec-title">Transactions &amp; ACID</div>
+  <div class="sec-sub">A transaction groups operations into an all-or-nothing unit. ACID is the guarantee that keeps your data consistent under concurrency and failure.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">⚛️</div>
+      <div class="comp-name">Atomicity</div>
+      <div class="comp-desc">All operations succeed or none do. A failed transfer never debits without crediting — it rolls back entirely.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">✅</div>
+      <div class="comp-name">Consistency</div>
+      <div class="comp-desc">Every transaction moves the DB from one valid state to another — constraints, triggers, and rules always hold.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔒</div>
+      <div class="comp-name">Isolation</div>
+      <div class="comp-desc">Concurrent transactions don't interfere — results look as if they ran one at a time (degree set by isolation level).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">💾</div>
+      <div class="comp-name">Durability</div>
+      <div class="comp-desc">Once committed, data survives crashes — guaranteed by the write-ahead log (WAL) flushed to durable storage.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">📝</div>
+    <div class="callout-body">
+      <strong>The write-ahead log (WAL) is the unsung hero.</strong> Changes are written to an append-only log
+      <em>before</em> being applied to data files. On crash, the DB replays the log to recover — giving both
+      durability and atomicity. It's also the foundation of replication (ship the log to replicas).
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 03 ISOLATION -->
+<div class="section" id="isolation">
+  <div class="sec-eyebrow">Concurrency 03</div>
+  <div class="sec-title">Isolation Levels &amp; Anomalies</div>
+  <div class="sec-sub">Stronger isolation = more correctness but less concurrency. Each level prevents specific anomalies — know what you're trading.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Level</th><th>Dirty Read</th><th>Non-Repeatable Read</th><th>Phantom Read</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Read Uncommitted</strong></td><td>❌ Possible</td><td>❌ Possible</td><td>❌ Possible</td></tr>
+      <tr><td><strong>Read Committed</strong></td><td>✓ Prevented</td><td>❌ Possible</td><td>❌ Possible</td></tr>
+      <tr><td><strong>Repeatable Read</strong></td><td>✓ Prevented</td><td>✓ Prevented</td><td>❌ Possible*</td></tr>
+      <tr><td><strong>Serializable</strong></td><td>✓ Prevented</td><td>✓ Prevented</td><td>✓ Prevented</td></tr>
+    </tbody>
+  </table>
+  <p class="lead">* Postgres's Repeatable Read (snapshot isolation) also prevents phantoms in practice.</p>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">💧</div>
+      <div class="comp-name">Dirty Read</div>
+      <div class="comp-desc">Reading another transaction's <em>uncommitted</em> changes that may roll back.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔁</div>
+      <div class="comp-name">Non-Repeatable Read</div>
+      <div class="comp-desc">Re-reading the same row returns a different value because another txn committed an update in between.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">👻</div>
+      <div class="comp-name">Phantom Read</div>
+      <div class="comp-desc">Re-running the same query returns new rows because another txn inserted matching records.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚔️</div>
+      <div class="comp-name">Lost Update</div>
+      <div class="comp-desc">Two txns read-modify-write the same row; one overwrites the other's change. Use optimistic/pessimistic locking.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🎚️</div>
+    <div class="callout-body">
+      <strong>Read Committed is the common default</strong> (Postgres, Oracle, SQL Server). Bump to Serializable
+      only where correctness demands it (financial invariants) — it's safest but can abort transactions under
+      contention, so the app must retry. Pick the <em>weakest</em> level that still preserves your invariants.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 04 LOCKING & MVCC -->
+<div class="section" id="locking">
+  <div class="sec-eyebrow">Internals 04</div>
+  <div class="sec-title">Locking &amp; MVCC</div>
+  <div class="sec-sub">How databases let many transactions run concurrently without corrupting each other — two competing philosophies.</div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Pessimistic locking</h4>
+      <ul>
+        <li>Lock rows before modifying (<code>SELECT ... FOR UPDATE</code>)</li>
+        <li>Others wait — no conflicts, but contention</li>
+        <li>Good for high-conflict, short transactions</li>
+        <li>Risk: deadlocks &amp; reduced throughput</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>MVCC (optimistic, snapshot)</h4>
+      <ul>
+        <li>Readers see a consistent snapshot — never block writers</li>
+        <li>Writers create new row versions; old ones kept for readers</li>
+        <li>Powers Postgres, MySQL/InnoDB, Oracle</li>
+        <li>Cost: version cleanup (vacuum) &amp; write conflicts</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧬</div>
+    <div class="callout-body">
+      <strong>MVCC's key insight: readers don't block writers and writers don't block readers.</strong> Each
+      transaction sees a snapshot of the data as of its start. This dramatically improves concurrency vs pure
+      locking — at the cost of storing multiple row versions and periodic garbage collection (Postgres
+      <code>VACUUM</code>).
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🔐</div>
+    <div class="callout-body">
+      <strong>Deadlocks</strong> happen when txn A holds lock 1 and wants lock 2 while txn B holds lock 2 and wants
+      lock 1. The DB detects the cycle and kills one (a victim) — the app must catch &amp; retry. Prevent them: acquire
+      locks in a <em>consistent order</em>, keep transactions short, and touch the fewest rows possible.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 05 QUERY OPTIMIZATION -->
+<div class="section" id="query">
+  <div class="sec-eyebrow">Tuning 05</div>
+  <div class="sec-title">Query Optimization &amp; Execution Plans</div>
+  <div class="sec-sub">The query planner turns your SQL into a physical plan. Reading that plan is the single most useful database debugging skill.</div>
+
+  <span class="code-label cl-neutral">EXPLAIN ANALYZE — see what the DB actually does</span>
+  <div class="code"><span class="kw">EXPLAIN ANALYZE</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> orders
+<span class="kw">WHERE</span> customer_id = <span class="nm">42</span> <span class="kw">AND</span> status = <span class="st">'open'</span>;
+
+<span class="cmt">-- Look for: Seq Scan (bad on big tables) vs Index Scan (good),</span>
+<span class="cmt">-- estimated vs actual rows (stale stats?), and the costliest node.</span></div>
+
+  <table class="styled-table">
+    <thead><tr><th>Plan node</th><th>Meaning</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Seq Scan</strong></td><td>Read every row</td><td>Fine on small tables, red flag on big ones</td></tr>
+      <tr><td><strong>Index Scan</strong></td><td>Use an index to find rows</td><td>Usually what you want</td></tr>
+      <tr><td><strong>Index Only Scan</strong></td><td>Answer entirely from a covering index</td><td>Best — no table access</td></tr>
+      <tr><td><strong>Nested Loop</strong></td><td>Join by looping</td><td>Great for small result sets</td></tr>
+      <tr><td><strong>Hash Join</strong></td><td>Build a hash, probe it</td><td>Good for large unsorted joins</td></tr>
+      <tr><td><strong>Merge Join</strong></td><td>Join two sorted inputs</td><td>Good when inputs already sorted</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🔧</div>
+    <div class="callout-body">
+      <strong>Optimization checklist:</strong> add the right index, avoid <code>SELECT *</code> (fetch only needed
+      columns → enables covering indexes), eliminate N+1 queries (batch/join instead), keep statistics fresh
+      (<code>ANALYZE</code>), and watch for the bottleneck node with the highest actual time. Measure before and
+      after — never optimize blind.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 06 MODELING -->
+<div class="section" id="modeling">
+  <div class="sec-eyebrow">Modeling 06</div>
+  <div class="sec-title">Normalization vs Denormalization</div>
+  <div class="sec-sub">Normalize for write integrity; denormalize for read speed. The right answer depends on your access patterns.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Normalization (3NF)</h4>
+      <ul>
+        <li>Each fact stored once → no update anomalies</li>
+        <li>Smaller tables, strong integrity</li>
+        <li>Great for write-heavy OLTP systems</li>
+        <li>Cost: more joins to assemble data</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>Denormalization</h4>
+      <ul>
+        <li>Duplicate data to avoid joins → fast reads</li>
+        <li>Great for read-heavy / analytics / feeds</li>
+        <li>Cost: redundancy, update complexity, drift risk</li>
+        <li>Often a cache or materialized view, not the source of truth</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>Default to normalized, denormalize deliberately.</strong> Start with a clean 3NF model for
+      correctness, then denormalize specific hot paths (materialized views, precomputed aggregates, read models)
+      when profiling proves joins are the bottleneck. Document the redundancy and how it stays in sync — uncontrolled
+      duplication is how data goes wrong.
+    </div>
+  </div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">🧱</div>
+    <div class="callout-body">
+      <strong>OLTP vs OLAP shapes the model.</strong> Transactional systems (OLTP) favor normalized rows for fast
+      writes &amp; point lookups. Analytical systems (OLAP / data warehouses) favor denormalized star/snowflake
+      schemas and columnar storage for fast aggregations over huge scans. Use the right store for each workload.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 07 SCALING -->
+<div class="section" id="scaling">
+  <div class="sec-eyebrow">Scale 07</div>
+  <div class="sec-title">Partitioning, Replication &amp; Pooling</div>
+  <div class="sec-sub">When one machine isn't enough, you spread the load — each technique with its own trade-offs.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📑</div>
+      <div class="comp-name">Partitioning</div>
+      <div class="comp-desc">Split one table by range/hash/list (e.g. by date) so queries touch fewer rows. Same DB, smaller working set.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧩</div>
+      <div class="comp-name">Sharding</div>
+      <div class="comp-desc">Horizontal partitioning across <em>machines</em> by a shard key. Scales writes &amp; storage; cross-shard joins get hard.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-name">Replication</div>
+      <div class="comp-desc">Copy data to replicas. Read replicas scale reads &amp; add HA; async replication means replica lag (stale reads).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔌</div>
+      <div class="comp-name">Connection Pooling</div>
+      <div class="comp-desc">Reuse a fixed set of DB connections. Connections are expensive — a pool (PgBouncer, built-in) prevents exhaustion.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🔑</div>
+    <div class="callout-body">
+      <strong>The shard key is the most important decision.</strong> A bad key creates hotspots (one shard does all
+      the work) and makes cross-shard queries painful. Choose a key with high cardinality and even distribution that
+      matches your dominant access pattern. Resharding later is expensive — get it right early, or avoid sharding
+      until you truly need it.
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">⏱️</div>
+    <div class="callout-body">
+      <strong>Replica lag breaks read-your-writes.</strong> With async replication, a user may write to the primary
+      then read a stale value from a replica. Fixes: route critical reads to the primary, use synchronous replication
+      for must-be-fresh data, or pin a session to the primary briefly after a write. Scaling reads with replicas is
+      easy; scaling writes (sharding) is the genuinely hard problem.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 08 SQL VS NOSQL -->
+<div class="section" id="sqlnosql">
+  <div class="sec-eyebrow">Choice 08</div>
+  <div class="sec-title">SQL vs NoSQL — Picking the Right Store</div>
+  <div class="sec-sub">"NoSQL" is many things. Match the data model and access pattern to the store, not the hype.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Store type</th><th>Model</th><th>Best for</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Relational</strong></td><td>Tables + joins, ACID</td><td>Structured data, transactions, complex queries</td><td>Postgres, MySQL, SQL Server</td></tr>
+      <tr><td><strong>Document</strong></td><td>JSON documents</td><td>Flexible/evolving schema, aggregates per entity</td><td>MongoDB, CosmosDB</td></tr>
+      <tr><td><strong>Key-Value</strong></td><td>Hash map</td><td>Caching, sessions, ultra-fast lookups</td><td>Redis, DynamoDB</td></tr>
+      <tr><td><strong>Wide-Column</strong></td><td>Sparse columns by key</td><td>Massive write throughput, time-series</td><td>Cassandra, ScyllaDB</td></tr>
+      <tr><td><strong>Graph</strong></td><td>Nodes + edges</td><td>Relationship-heavy (social, fraud, recommendations)</td><td>Neo4j, Neptune</td></tr>
+      <tr><td><strong>Search</strong></td><td>Inverted index</td><td>Full-text search, log analytics</td><td>Elasticsearch, OpenSearch</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Relational is the right default for most apps.</strong> Reach for NoSQL when you have a specific need
+      it serves better: extreme scale, flexible schema, a non-tabular data shape, or a particular access pattern.
+      Modern Postgres handles JSON, full-text search, and huge scale — often you don't need a separate NoSQL store at
+      all. <strong>Polyglot persistence</strong> (different stores for different jobs) is common at scale.
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">📐</div>
+    <div class="callout-body">
+      <strong>NoSQL design is access-pattern-first.</strong> Relational modeling normalizes around the data; NoSQL
+      modeling (especially DynamoDB/Cassandra) starts from <em>the queries you'll run</em> and shapes the data to
+      serve them cheaply — often denormalizing heavily. Know your queries before you design the schema.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  Senior Engineering Guide &nbsp;·&nbsp; Database Deep Dive &nbsp;·&nbsp;
+  <a href="index.html">← AI Architecture Guide</a> &nbsp;·&nbsp;
+  <a href="dotnet-questions.html">.NET Guide</a> &nbsp;·&nbsp;
+  <a href="system-design-concepts.html">System Design</a> &nbsp;·&nbsp;
+  <a href="clean-code-design-patterns.html">Clean Code</a> &nbsp;·&nbsp;
+  <a href="data-structures-algorithms.html">DSA</a> &nbsp;·&nbsp;
+  <a href="devops-cicd-cloud.html">DevOps</a> &nbsp;·&nbsp;
+  <a href="api-design.html">API Design</a>
+</footer>
+
+<script>
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.classList.toggle('visible', window.scrollY > 600);
+  });
+</script>
+
+</body>
+</html>

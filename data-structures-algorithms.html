@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Structures &amp; Algorithms — Senior Engineering Guide</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(139,92,246,.13);
+      border: 1px solid rgba(139,92,246,.3);
+      color: var(--purple-l);
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px;
+    }
+    .hero p { font-size: 1.1rem; color: var(--t2); max-width: 760px; margin: 0 auto 40px; }
+
+    /* NAV */
+    .nav {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      padding: 0 40px 44px; position: relative; z-index: 1;
+    }
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: 100px;
+      border: 1px solid var(--border); background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500; backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1); transform: translateY(-2px);
+    }
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* CONTAINER */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px 96px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+    .sec-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+    .sec-title { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: var(--t1); margin-bottom: 10px; }
+    .sec-sub { font-size: 1rem; color: var(--t2); max-width: 800px; margin-bottom: 32px; }
+
+    /* SUB-HEADING */
+    .qh {
+      font-size: 1.15rem; font-weight: 700; color: var(--t1);
+      margin: 36px 0 14px; padding-left: 14px; border-left: 3px solid var(--blue);
+      line-height: 1.4;
+    }
+    .qh small { display: block; font-size: 12px; font-weight: 600; color: var(--blue-l); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+
+    .lead { font-size: 14.5px; color: var(--t2); margin-bottom: 16px; }
+    .lead strong { color: var(--t1); }
+
+    /* CARD GRID */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .comp-card { background: rgba(59,130,246,.04); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all .25s; }
+    .comp-card:hover { background: rgba(59,130,246,.09); border-color: var(--border-h); transform: translateY(-3px); }
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+    .comp-name { font-size: 13.5px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .comp-desc code { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+    /* CODE BLOCK */
+    .code {
+      background: #0a1424;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px; line-height: 1.7;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    .code .cmt { color: #64748b; font-style: italic; }
+    .code .kw  { color: #c4b5fd; }
+    .code .ty  { color: #67e8f9; }
+    .code .st  { color: #6ee7b7; }
+    .code .nm  { color: #fcd34d; }
+    .code .bad { color: #fda4af; }
+    .code .good{ color: #6ee7b7; }
+    .code-label {
+      display: inline-block; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 6px; margin-bottom: -6px;
+    }
+    .cl-bad  { background: rgba(244,63,94,.12); color: #fda4af; border: 1px solid rgba(244,63,94,.3); }
+    .cl-good { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .cl-neutral { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+    /* INLINE CODE */
+    p code, li code, td code, .lead code, .step-txt code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: rgba(59,130,246,.10); color: #93c5fd;
+      padding: 1px 6px; border-radius: 5px;
+    }
+
+    /* CALLOUT */
+    .callout { padding: 18px 22px; border-radius: 12px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .callout-blue  { background: rgba(59,130,246,.08); border-left: 3px solid var(--blue); }
+    .callout-green { background: rgba(16,185,129,.08); border-left: 3px solid var(--emerald); }
+    .callout-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--amber); }
+    .callout-purple{ background: rgba(139,92,246,.08); border-left: 3px solid var(--purple); }
+    .callout-rose  { background: rgba(244,63,94,.08);  border-left: 3px solid var(--rose); }
+    .callout-icon  { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body  { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+    .callout-body strong { color: var(--t1); }
+    .callout-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,.06); color: #93c5fd; padding: 1px 6px; border-radius: 5px; }
+
+    /* TABLE */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .styled-table th {
+      background: rgba(59,130,246,.12); color: var(--blue-l);
+      font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(59,130,246,.25);
+    }
+    .styled-table td { padding: 11px 16px; font-size: 13px; color: var(--t2); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .styled-table tr:hover td { background: rgba(59,130,246,.04); }
+    .styled-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(59,130,246,.10); color: #93c5fd; padding: 1px 5px; border-radius: 4px; }
+
+    /* STEPS */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin: 18px 0; }
+    .step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; }
+    .step-n { min-width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+    .panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: .04em; }
+    .panel ul { list-style: none; }
+    .panel ul li { font-size: 13px; color: var(--t2); padding: 5px 0 5px 20px; position: relative; line-height: 1.55; }
+    .panel ul li::before { position: absolute; left: 0; }
+    .panel-bad { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .panel-bad h4 { color: #fda4af; }
+    .panel-bad ul li::before { content: '✕'; color: var(--rose); }
+    .panel-good { background: rgba(16,185,129,.05); border-color: rgba(16,185,129,.25); }
+    .panel-good h4 { color: #6ee7b7; }
+    .panel-good ul li::before { content: '✓'; color: var(--emerald); }
+    .panel-neutral { background: rgba(59,130,246,.05); border-color: rgba(59,130,246,.25); }
+    .panel-neutral h4 { color: #93c5fd; }
+    .panel-neutral ul li::before { content: '→'; color: var(--blue-l); }
+
+    /* DIAGRAM */
+    .diagram-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin: 20px 0; }
+    .diagram-lbl { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+    .diagram-box { background: #ffffff; border-radius: 10px; padding: 24px; overflow-x: auto; }
+
+    /* TAGS */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tag { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 500; border: 1px solid; }
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 56px 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 40px; border-top: 1px solid var(--border); color: var(--t3); font-size: 13px; }
+    footer a { color: var(--blue-l); text-decoration: none; }
+
+    /* BACK TO TOP */
+    .btt { position: fixed; bottom: 28px; right: 28px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 20px rgba(59,130,246,.4); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+    .btt.visible { opacity: 1; pointer-events: auto; }
+    .btt:hover { transform: translateY(-3px); }
+
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btt" id="btt" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge"><span></span> DSA Field Guide</div>
+  <h1>Data Structures<br>&amp; Algorithms</h1>
+  <p>
+    The thinking toolkit behind efficient software: complexity analysis, the core data structures and when to reach
+    for each, the algorithm families, and the problem-solving patterns that turn "I've seen this before" into a fast,
+    correct solution.
+  </p>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="#complexity"> <span class="dot" style="background:#3b82f6"></span> Big-O Complexity</a>
+  <a href="#structures"> <span class="dot" style="background:#8b5cf6"></span> Data Structures</a>
+  <a href="#sorting">    <span class="dot" style="background:#06b6d4"></span> Sorting &amp; Searching</a>
+  <a href="#graphs">     <span class="dot" style="background:#10b981"></span> Trees &amp; Graphs</a>
+  <a href="#paradigms">  <span class="dot" style="background:#f59e0b"></span> Algorithm Paradigms</a>
+  <a href="#patterns">   <span class="dot" style="background:#f43f5e"></span> Problem Patterns</a>
+  <a href="#approach">   <span class="dot" style="background:#a78bfa"></span> How to Solve</a>
+</div>
+
+<div class="wrap">
+
+<!-- 01 COMPLEXITY -->
+<div class="section" id="complexity">
+  <div class="sec-eyebrow">Foundation 01</div>
+  <div class="sec-title">Big-O — Measuring How Things Grow</div>
+  <div class="sec-sub">Big-O describes how runtime/space scales as input grows. It's about the <em>growth rate</em>, not the stopwatch — constants drop, the dominant term wins.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Notation</th><th>Name</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><code>O(1)</code></td><td>Constant</td><td>Hash lookup, array index</td></tr>
+      <tr><td><code>O(log n)</code></td><td>Logarithmic</td><td>Binary search, balanced-tree ops</td></tr>
+      <tr><td><code>O(n)</code></td><td>Linear</td><td>Single loop, linear scan</td></tr>
+      <tr><td><code>O(n log n)</code></td><td>Linearithmic</td><td>Merge/heap/quick sort</td></tr>
+      <tr><td><code>O(n²)</code></td><td>Quadratic</td><td>Nested loops, bubble sort</td></tr>
+      <tr><td><code>O(2ⁿ)</code></td><td>Exponential</td><td>Naive recursion (subsets, Fibonacci)</td></tr>
+      <tr><td><code>O(n!)</code></td><td>Factorial</td><td>Permutations, brute-force TSP</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">📊</div>
+    <div class="callout-body">
+      <strong>Time &amp; space both matter.</strong> Analyze worst, average, and (sometimes) amortized cases — a
+      dynamic array's <code>Add</code> is amortized <code>O(1)</code> despite occasional <code>O(n)</code> resizes.
+      For recursion, watch the call-stack space too.
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">O(n²) — nested scan to find duplicates</span>
+  <div class="code"><span class="kw">for</span> (<span class="ty">int</span> i = <span class="nm">0</span>; i &lt; n; i++)
+  <span class="kw">for</span> (<span class="ty">int</span> j = i+<span class="nm">1</span>; j &lt; n; j++)
+    <span class="kw">if</span> (a[i] == a[j]) <span class="kw">return true</span>;   <span class="bad">// quadratic</span></div>
+
+  <span class="code-label cl-good">O(n) — trade space for time with a HashSet</span>
+  <div class="code"><span class="kw">var</span> seen = <span class="kw">new</span> <span class="ty">HashSet</span>&lt;<span class="ty">int</span>&gt;();
+<span class="kw">foreach</span> (<span class="kw">var</span> x <span class="kw">in</span> a)
+    <span class="kw">if</span> (!seen.<span class="good">Add</span>(x)) <span class="kw">return true</span>;  <span class="cmt">// O(1) lookups → O(n) total</span></div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>The space–time trade-off is everywhere.</strong> Hashing, memoization, and precomputed indexes spend
+      memory to save time. Big-O hides constants — for small <code>n</code>, a "worse" algorithm with tiny constants
+      can win. Always know your real input sizes.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 02 DATA STRUCTURES -->
+<div class="section" id="structures">
+  <div class="sec-eyebrow">Toolkit 02</div>
+  <div class="sec-title">Core Data Structures &amp; Their Costs</div>
+  <div class="sec-sub">Choosing the right structure is usually the whole solution. Know the operation costs cold.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Structure</th><th>Access</th><th>Search</th><th>Insert</th><th>Delete</th><th>Use for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Array / List</strong></td><td>O(1)</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>Indexed, contiguous data</td></tr>
+      <tr><td><strong>Linked List</strong></td><td>O(n)</td><td>O(n)</td><td>O(1)*</td><td>O(1)*</td><td>Frequent ends insert/remove</td></tr>
+      <tr><td><strong>Hash Table</strong></td><td>—</td><td>O(1)</td><td>O(1)</td><td>O(1)</td><td>Keyed lookups, dedup, caches</td></tr>
+      <tr><td><strong>Stack (LIFO)</strong></td><td>O(1) top</td><td>O(n)</td><td>O(1)</td><td>O(1)</td><td>Undo, DFS, call stacks</td></tr>
+      <tr><td><strong>Queue (FIFO)</strong></td><td>O(1) front</td><td>O(n)</td><td>O(1)</td><td>O(1)</td><td>BFS, buffering, scheduling</td></tr>
+      <tr><td><strong>Binary Search Tree</strong></td><td>O(log n)</td><td>O(log n)</td><td>O(log n)</td><td>O(log n)</td><td>Ordered data, range queries</td></tr>
+      <tr><td><strong>Heap</strong></td><td>O(1) peek</td><td>O(n)</td><td>O(log n)</td><td>O(log n)</td><td>Priority queue, top-K</td></tr>
+      <tr><td><strong>Trie</strong></td><td>O(k)</td><td>O(k)</td><td>O(k)</td><td>O(k)</td><td>Prefix search, autocomplete</td></tr>
+    </tbody>
+  </table>
+  <p class="lead">* O(1) for linked lists assumes you already hold the node reference.</p>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">#️⃣</div>
+      <div class="comp-name">Hash table internals</div>
+      <div class="comp-desc">Hash → bucket. <strong>Collisions</strong> handled by chaining or open addressing; a good hash + low load factor keeps ops O(1) on average, O(n) worst case.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🌲</div>
+      <div class="comp-name">Balanced trees</div>
+      <div class="comp-desc">Red-Black / AVL trees self-balance to guarantee O(log n). Back C#'s <code>SortedDictionary</code> &amp; many DB indexes.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⛰️</div>
+      <div class="comp-name">Heap / Priority Queue</div>
+      <div class="comp-desc">A complete binary tree where the root is min/max. The go-to for "K largest", Dijkstra, and scheduling.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔤</div>
+      <div class="comp-name">Trie</div>
+      <div class="comp-desc">A prefix tree of characters — autocomplete, spell-check, IP routing. Cost scales with key length, not dataset size.</div>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 03 SORTING & SEARCHING -->
+<div class="section" id="sorting">
+  <div class="sec-eyebrow">Algorithms 03</div>
+  <div class="sec-title">Sorting &amp; Searching</div>
+  <div class="sec-sub">The most-studied algorithms — and a great lens on trade-offs (time vs space vs stability).</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Algorithm</th><th>Average</th><th>Worst</th><th>Space</th><th>Stable?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Quick Sort</strong></td><td>O(n log n)</td><td>O(n²)</td><td>O(log n)</td><td>No</td></tr>
+      <tr><td><strong>Merge Sort</strong></td><td>O(n log n)</td><td>O(n log n)</td><td>O(n)</td><td>Yes</td></tr>
+      <tr><td><strong>Heap Sort</strong></td><td>O(n log n)</td><td>O(n log n)</td><td>O(1)</td><td>No</td></tr>
+      <tr><td><strong>Insertion Sort</strong></td><td>O(n²)</td><td>O(n²)</td><td>O(1)</td><td>Yes</td></tr>
+      <tr><td><strong>Counting/Radix</strong></td><td>O(n + k)</td><td>O(n·k)</td><td>O(n + k)</td><td>Yes</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🔍</div>
+    <div class="callout-body">
+      <strong>Binary search</strong> finds an element in a <em>sorted</em> array in <code>O(log n)</code> by halving
+      the range each step. The technique generalizes far beyond arrays — "binary search on the answer" solves many
+      optimization problems (find the smallest value that satisfies a monotonic condition).
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Binary search — the canonical template</span>
+  <div class="code"><span class="kw">int</span> lo = <span class="nm">0</span>, hi = a.Length - <span class="nm">1</span>;
+<span class="kw">while</span> (lo &lt;= hi)
+{
+    <span class="kw">int</span> mid = lo + (hi - lo) / <span class="nm">2</span>;     <span class="cmt">// avoids overflow</span>
+    <span class="kw">if</span> (a[mid] == target) <span class="kw">return</span> mid;
+    <span class="kw">if</span> (a[mid] &lt; target) lo = mid + <span class="nm">1</span>;
+    <span class="kw">else</span> hi = mid - <span class="nm">1</span>;
+}
+<span class="kw">return</span> -<span class="nm">1</span>;</div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🧭</div>
+    <div class="callout-body">
+      <strong>In practice, use the library sort.</strong> <code>Array.Sort</code> / <code>List.Sort</code> use
+      tuned hybrid algorithms (introsort/Timsort). Know the theory to choose &amp; reason; don't hand-roll sorts in
+      production. Pick a <strong>stable</strong> sort when equal keys must keep their original order.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 04 TREES & GRAPHS -->
+<div class="section" id="graphs">
+  <div class="sec-eyebrow">Algorithms 04</div>
+  <div class="sec-title">Trees &amp; Graphs — Traversal &amp; Paths</div>
+  <div class="sec-sub">Graphs model networks, dependencies, maps, and social connections. Mastering traversal unlocks a huge class of problems.</div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>BFS — Breadth-First Search</h4>
+      <ul>
+        <li>Explores level by level using a <strong>queue</strong></li>
+        <li>Finds the <strong>shortest path</strong> in unweighted graphs</li>
+        <li>O(V + E) time</li>
+        <li>Use for: shortest hops, level order, nearest</li>
+      </ul>
+    </div>
+    <div class="panel panel-neutral">
+      <h4>DFS — Depth-First Search</h4>
+      <ul>
+        <li>Goes deep first via recursion / a <strong>stack</strong></li>
+        <li>Detects cycles, topological sort, connectivity</li>
+        <li>O(V + E) time</li>
+        <li>Use for: paths, components, backtracking</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🛣️</div>
+      <div class="comp-name">Dijkstra</div>
+      <div class="comp-desc">Shortest path in a <strong>weighted</strong> graph (non-negative weights) using a min-heap. O(E log V).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⭐</div>
+      <div class="comp-name">A* Search</div>
+      <div class="comp-desc">Dijkstra + a heuristic to guide the search toward the goal. The workhorse of pathfinding (games, maps).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-name">Topological Sort</div>
+      <div class="comp-desc">Linear ordering of a DAG — task scheduling, build dependencies, course prerequisites.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🌐</div>
+      <div class="comp-name">Union-Find</div>
+      <div class="comp-desc">Near-O(1) "are these connected?" with path compression. Powers Kruskal's MST &amp; connectivity checks.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🗺️</div>
+    <div class="callout-body">
+      <strong>Recognize the graph hiding in the problem.</strong> Maze, dependency chain, word ladder, friend
+      network, state machine — all are graphs. Once you see nodes &amp; edges, BFS/DFS/Dijkstra apply directly.
+      Represent with an <strong>adjacency list</strong> for sparse graphs (most real ones).
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 05 PARADIGMS -->
+<div class="section" id="paradigms">
+  <div class="sec-eyebrow">Strategy 05</div>
+  <div class="sec-title">Algorithm Paradigms</div>
+  <div class="sec-sub">The high-level strategies. Identifying the right paradigm is half the battle.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">✂️</div>
+      <div class="comp-name">Divide &amp; Conquer</div>
+      <div class="comp-desc">Split into subproblems, solve, combine. Merge sort, quick sort, binary search, FFT.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">💰</div>
+      <div class="comp-name">Greedy</div>
+      <div class="comp-desc">Make the locally best choice at each step. Works when local optima → global optimum (Dijkstra, Huffman, interval scheduling).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧠</div>
+      <div class="comp-name">Dynamic Programming</div>
+      <div class="comp-desc">Overlapping subproblems + optimal substructure → memoize/tabulate. Knapsack, edit distance, LIS.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔙</div>
+      <div class="comp-name">Backtracking</div>
+      <div class="comp-desc">Try, recurse, undo. Explore the solution space, prune dead ends. N-Queens, sudoku, permutations.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">🧩</div>
+    <div class="callout-body">
+      <strong>Greedy vs DP:</strong> both build solutions incrementally, but greedy commits to a choice and never
+      reconsiders, while DP explores all sub-solutions and picks the best. If a greedy choice can be "wrong" given
+      later information, you need DP. Prove greedy works (exchange argument) before trusting it.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">DP — memoized Fibonacci turns O(2ⁿ) into O(n)</span>
+  <div class="code"><span class="kw">var</span> memo = <span class="kw">new</span> <span class="ty">Dictionary</span>&lt;<span class="ty">int</span>, <span class="ty">long</span>&gt;();
+<span class="kw">long</span> <span class="nm">Fib</span>(<span class="ty">int</span> n)
+{
+    <span class="kw">if</span> (n &lt; <span class="nm">2</span>) <span class="kw">return</span> n;
+    <span class="kw">if</span> (memo.<span class="nm">TryGetValue</span>(n, <span class="kw">out</span> <span class="kw">var</span> v)) <span class="kw">return</span> v;  <span class="good">// reuse</span>
+    <span class="kw">return</span> memo[n] = <span class="nm">Fib</span>(n-<span class="nm">1</span>) + <span class="nm">Fib</span>(n-<span class="nm">2</span>);
+}</div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 06 PROBLEM PATTERNS -->
+<div class="section" id="patterns">
+  <div class="sec-eyebrow">Patterns 06</div>
+  <div class="sec-title">Problem-Solving Patterns</div>
+  <div class="sec-sub">Most coding-interview problems are variations on a dozen patterns. Recognize the pattern → recall the template.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Pattern</th><th>Signal</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Two Pointers</strong></td><td>Sorted array, pair/triplet</td><td>Pair sums, palindromes, dedup</td></tr>
+      <tr><td><strong>Sliding Window</strong></td><td>Contiguous subarray/substring</td><td>Max sum window, longest substring</td></tr>
+      <tr><td><strong>Fast &amp; Slow Pointers</strong></td><td>Linked list / cycle</td><td>Cycle detection, find middle</td></tr>
+      <tr><td><strong>Hash Map</strong></td><td>"Have I seen…?", counts</td><td>Two-sum, frequency, grouping</td></tr>
+      <tr><td><strong>Top-K / Heap</strong></td><td>"K largest/smallest/frequent"</td><td>Streaming top-K, merge K lists</td></tr>
+      <tr><td><strong>Binary Search</strong></td><td>Sorted / monotonic answer</td><td>Search, "minimum that works"</td></tr>
+      <tr><td><strong>BFS / DFS</strong></td><td>Tree/graph/grid traversal</td><td>Paths, islands, levels</td></tr>
+      <tr><td><strong>Dynamic Programming</strong></td><td>"Count ways / min cost / optimal"</td><td>Knapsack, paths, sequences</td></tr>
+      <tr><td><strong>Backtracking</strong></td><td>"All combinations/permutations"</td><td>Subsets, N-Queens, word search</td></tr>
+      <tr><td><strong>Intervals</strong></td><td>Start/end ranges</td><td>Merge intervals, meeting rooms</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Pattern recognition beats memorization.</strong> You can't memorize thousands of problems, but you can
+      learn ~12 patterns and map any new problem to one. "Contiguous subarray with a constraint" → sliding window.
+      "K most frequent" → heap. The signal in the prompt tells you the tool.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 07 APPROACH -->
+<div class="section" id="approach">
+  <div class="sec-eyebrow">Method 07</div>
+  <div class="sec-title">How to Solve Any Problem</div>
+  <div class="sec-sub">A repeatable framework — in interviews and real work alike. Communicate as you go.</div>
+
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Understand &amp; clarify.</strong> Restate the problem, ask about constraints, edge cases, input size, and expected output. Confirm with an example.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Work an example by hand.</strong> Trace a small input to find the underlying structure and edge cases.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Brute force first.</strong> State the obvious solution &amp; its complexity — it's a correct baseline and shows your thinking.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Optimize.</strong> Identify the bottleneck and the pattern that removes it (hashing, sorting, two pointers, DP). State the new complexity.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>Code it cleanly.</strong> Readable names, handle edge cases, modular helpers. Talk through it as you write.</div></div>
+    <div class="step"><div class="step-n">6</div><div class="step-txt"><strong>Test &amp; verify.</strong> Walk through normal, edge, and boundary cases (empty, single, max, duplicates, negatives).</div></div>
+    <div class="step"><div class="step-n">7</div><div class="step-txt"><strong>Analyze &amp; discuss.</strong> Final time/space complexity, trade-offs, and how it scales or could be improved.</div></div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🗣️</div>
+    <div class="callout-body">
+      <strong>Edge cases separate seniors from juniors:</strong> empty input, single element, duplicates, negatives,
+      overflow, null, already-sorted, all-equal. Name them up front. And remember the real-world truth — clarity and
+      correctness beat a clever one-liner nobody can maintain.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  Senior Engineering Guide &nbsp;·&nbsp; Data Structures &amp; Algorithms &nbsp;·&nbsp;
+  <a href="index.html">← AI Architecture Guide</a> &nbsp;·&nbsp;
+  <a href="dotnet-questions.html">.NET Guide</a> &nbsp;·&nbsp;
+  <a href="system-design-concepts.html">System Design</a> &nbsp;·&nbsp;
+  <a href="clean-code-design-patterns.html">Clean Code</a>
+</footer>
+
+<script>
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.classList.toggle('visible', window.scrollY > 600);
+  });
+</script>
+
+</body>
+</html>

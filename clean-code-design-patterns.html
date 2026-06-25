@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clean Code, SOLID &amp; Design Patterns — Senior Engineering Guide</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(139,92,246,.13);
+      border: 1px solid rgba(139,92,246,.3);
+      color: var(--purple-l);
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px;
+    }
+    .hero p { font-size: 1.1rem; color: var(--t2); max-width: 760px; margin: 0 auto 40px; }
+
+    /* NAV */
+    .nav {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      padding: 0 40px 44px; position: relative; z-index: 1;
+    }
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: 100px;
+      border: 1px solid var(--border); background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500; backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1); transform: translateY(-2px);
+    }
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* CONTAINER */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px 96px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+    .sec-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+    .sec-title { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: var(--t1); margin-bottom: 10px; }
+    .sec-sub { font-size: 1rem; color: var(--t2); max-width: 800px; margin-bottom: 32px; }
+
+    /* SUB-HEADING */
+    .qh {
+      font-size: 1.15rem; font-weight: 700; color: var(--t1);
+      margin: 36px 0 14px; padding-left: 14px; border-left: 3px solid var(--blue);
+      line-height: 1.4;
+    }
+    .qh small { display: block; font-size: 12px; font-weight: 600; color: var(--blue-l); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+
+    .lead { font-size: 14.5px; color: var(--t2); margin-bottom: 16px; }
+    .lead strong { color: var(--t1); }
+
+    /* CARD GRID */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .comp-card { background: rgba(59,130,246,.04); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all .25s; }
+    .comp-card:hover { background: rgba(59,130,246,.09); border-color: var(--border-h); transform: translateY(-3px); }
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+    .comp-name { font-size: 13.5px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .comp-desc code { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+    /* CODE BLOCK */
+    .code {
+      background: #0a1424;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px; line-height: 1.7;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    .code .cmt { color: #64748b; font-style: italic; }
+    .code .kw  { color: #c4b5fd; }
+    .code .ty  { color: #67e8f9; }
+    .code .st  { color: #6ee7b7; }
+    .code .nm  { color: #fcd34d; }
+    .code .bad { color: #fda4af; }
+    .code .good{ color: #6ee7b7; }
+    .code-label {
+      display: inline-block; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 6px; margin-bottom: -6px;
+    }
+    .cl-bad  { background: rgba(244,63,94,.12); color: #fda4af; border: 1px solid rgba(244,63,94,.3); }
+    .cl-good { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .cl-neutral { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+    /* INLINE CODE */
+    p code, li code, td code, .lead code, .step-txt code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: rgba(59,130,246,.10); color: #93c5fd;
+      padding: 1px 6px; border-radius: 5px;
+    }
+
+    /* CALLOUT */
+    .callout { padding: 18px 22px; border-radius: 12px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .callout-blue  { background: rgba(59,130,246,.08); border-left: 3px solid var(--blue); }
+    .callout-green { background: rgba(16,185,129,.08); border-left: 3px solid var(--emerald); }
+    .callout-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--amber); }
+    .callout-purple{ background: rgba(139,92,246,.08); border-left: 3px solid var(--purple); }
+    .callout-rose  { background: rgba(244,63,94,.08);  border-left: 3px solid var(--rose); }
+    .callout-icon  { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body  { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+    .callout-body strong { color: var(--t1); }
+    .callout-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,.06); color: #93c5fd; padding: 1px 6px; border-radius: 5px; }
+
+    /* TABLE */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .styled-table th {
+      background: rgba(59,130,246,.12); color: var(--blue-l);
+      font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(59,130,246,.25);
+    }
+    .styled-table td { padding: 11px 16px; font-size: 13px; color: var(--t2); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .styled-table tr:hover td { background: rgba(59,130,246,.04); }
+    .styled-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(59,130,246,.10); color: #93c5fd; padding: 1px 5px; border-radius: 4px; }
+
+    /* STEPS */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin: 18px 0; }
+    .step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; }
+    .step-n { min-width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+    .panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: .04em; }
+    .panel ul { list-style: none; }
+    .panel ul li { font-size: 13px; color: var(--t2); padding: 5px 0 5px 20px; position: relative; line-height: 1.55; }
+    .panel ul li::before { position: absolute; left: 0; }
+    .panel-bad { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .panel-bad h4 { color: #fda4af; }
+    .panel-bad ul li::before { content: '✕'; color: var(--rose); }
+    .panel-good { background: rgba(16,185,129,.05); border-color: rgba(16,185,129,.25); }
+    .panel-good h4 { color: #6ee7b7; }
+    .panel-good ul li::before { content: '✓'; color: var(--emerald); }
+    .panel-neutral { background: rgba(59,130,246,.05); border-color: rgba(59,130,246,.25); }
+    .panel-neutral h4 { color: #93c5fd; }
+    .panel-neutral ul li::before { content: '→'; color: var(--blue-l); }
+
+    /* DIAGRAM */
+    .diagram-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin: 20px 0; }
+    .diagram-lbl { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+    .diagram-box { background: #ffffff; border-radius: 10px; padding: 24px; overflow-x: auto; }
+
+    /* TAGS */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tag { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 500; border: 1px solid; }
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 56px 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 40px; border-top: 1px solid var(--border); color: var(--t3); font-size: 13px; }
+    footer a { color: var(--blue-l); text-decoration: none; }
+
+    /* BACK TO TOP */
+    .btt { position: fixed; bottom: 28px; right: 28px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 20px rgba(59,130,246,.4); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+    .btt.visible { opacity: 1; pointer-events: auto; }
+    .btt:hover { transform: translateY(-3px); }
+
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btt" id="btt" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge"><span></span> Clean Code &amp; Design</div>
+  <h1>Clean Code, SOLID<br>&amp; Design Patterns</h1>
+  <p>
+    Writing code that humans can read, change, and trust. The principles, the patterns, the refactoring moves, and
+    the code smells — with concrete before/after examples and the trade-offs a senior weighs before reaching for any
+    abstraction.
+  </p>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="#cleancode"> <span class="dot" style="background:#3b82f6"></span> Clean Code</a>
+  <a href="#solid">     <span class="dot" style="background:#8b5cf6"></span> SOLID</a>
+  <a href="#principles"><span class="dot" style="background:#06b6d4"></span> DRY / KISS / YAGNI</a>
+  <a href="#smells">    <span class="dot" style="background:#10b981"></span> Code Smells</a>
+  <a href="#creational"><span class="dot" style="background:#f59e0b"></span> Creational Patterns</a>
+  <a href="#structural"><span class="dot" style="background:#f43f5e"></span> Structural Patterns</a>
+  <a href="#behavioral"><span class="dot" style="background:#a78bfa"></span> Behavioral Patterns</a>
+  <a href="#refactoring"><span class="dot" style="background:#06b6d4"></span> Refactoring</a>
+  <a href="#tradeoffs"> <span class="dot" style="background:#10b981"></span> When NOT to Pattern</a>
+</div>
+
+<div class="wrap">
+
+<!-- 01 CLEAN CODE -->
+<div class="section" id="cleancode">
+  <div class="sec-eyebrow">Topic 01</div>
+  <div class="sec-title">Clean Code — Optimize for Reading</div>
+  <div class="sec-sub">Code is read far more often than it's written. Clean code is not about cleverness — it's about clarity, so the next person (often you in six months) understands it instantly.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🏷️</div>
+      <div class="comp-name">Meaningful names</div>
+      <div class="comp-desc">Reveal intent. <code>elapsedDays</code> beats <code>d</code>. Pronounceable, searchable, no encodings. A good name removes the need for a comment.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔬</div>
+      <div class="comp-name">Small functions</div>
+      <div class="comp-desc">Do one thing, one level of abstraction, few arguments. If you need "and" to describe it, split it.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">💬</div>
+      <div class="comp-name">Comments explain "why"</div>
+      <div class="comp-desc">Good code is self-documenting for "what"; comments justify the non-obvious "why". Delete commented-out code.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧯</div>
+      <div class="comp-name">Fail fast, guard early</div>
+      <div class="comp-desc">Validate at boundaries, return early, avoid deep nesting. Flat code with guard clauses reads top-to-bottom.</div>
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">Unclear — what does this even do?</span>
+  <div class="code"><span class="kw">public</span> <span class="ty">List</span>&lt;<span class="ty">int</span>&gt; <span class="nm">gd</span>(<span class="ty">List</span>&lt;<span class="ty">int</span>&gt; l)
+{
+    <span class="kw">var</span> r = <span class="kw">new</span> <span class="ty">List</span>&lt;<span class="ty">int</span>&gt;();
+    <span class="kw">foreach</span> (<span class="kw">var</span> x <span class="kw">in</span> l)
+        <span class="kw">if</span> (x % <span class="nm">2</span> == <span class="nm">0</span>) r.<span class="nm">Add</span>(x);   <span class="bad">// magic, cryptic names</span>
+    <span class="kw">return</span> r;
+}</div>
+
+  <span class="code-label cl-good">Intent is obvious</span>
+  <div class="code"><span class="kw">public</span> <span class="ty">List</span>&lt;<span class="ty">int</span>&gt; <span class="good">GetEvenNumbers</span>(<span class="ty">List</span>&lt;<span class="ty">int</span>&gt; numbers) =&gt;
+    numbers.<span class="nm">Where</span>(n =&gt; <span class="nm">IsEven</span>(n)).<span class="nm">ToList</span>();
+
+<span class="kw">private bool</span> <span class="nm">IsEven</span>(<span class="ty">int</span> n) =&gt; n % <span class="nm">2</span> == <span class="nm">0</span>;</div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>The Boy Scout Rule:</strong> leave the code cleaner than you found it. Small, continuous improvements
+      compound; big-bang rewrites rarely happen. Clean code is a habit, not a project.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 02 SOLID -->
+<div class="section" id="solid">
+  <div class="sec-eyebrow">Topic 02</div>
+  <div class="sec-title">SOLID Principles</div>
+  <div class="sec-sub">Five principles for object-oriented design that keep code flexible, testable, and resistant to rot.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Principle</th><th>One-liner</th><th>Violation smell</th></tr></thead>
+    <tbody>
+      <tr><td><strong>S</strong> — Single Responsibility</td><td>A class has one reason to change</td><td>God class doing persistence + validation + formatting</td></tr>
+      <tr><td><strong>O</strong> — Open/Closed</td><td>Open to extension, closed to modification</td><td>A growing <code>switch</code> you edit for every new type</td></tr>
+      <tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtypes must be usable as their base</td><td>Override that throws <code>NotSupportedException</code></td></tr>
+      <tr><td><strong>I</strong> — Interface Segregation</td><td>Many focused interfaces &gt; one fat one</td><td>Implementing methods you leave empty / unsupported</td></tr>
+      <tr><td><strong>D</strong> — Dependency Inversion</td><td>Depend on abstractions, not concretes</td><td><code>new SqlRepository()</code> hard-wired inside logic</td></tr>
+    </tbody>
+  </table>
+
+  <span class="code-label cl-bad">OCP violation — edit the class for every new shape</span>
+  <div class="code"><span class="kw">public double</span> <span class="nm">Area</span>(<span class="ty">object</span> shape)
+{
+    <span class="kw">if</span> (shape <span class="kw">is</span> <span class="ty">Circle</span> c) <span class="kw">return</span> <span class="ty">Math</span>.PI * c.R * c.R;
+    <span class="kw">if</span> (shape <span class="kw">is</span> <span class="ty">Square</span> s) <span class="kw">return</span> s.Side * s.Side;
+    <span class="bad">// add another 'if' for every new shape… forever</span>
+    <span class="kw">throw new</span> <span class="ty">NotSupportedException</span>();
+}</div>
+
+  <span class="code-label cl-good">OCP — extend by adding a class, not editing</span>
+  <div class="code"><span class="kw">public interface</span> <span class="ty">IShape</span> { <span class="kw">double</span> <span class="nm">Area</span>(); }
+
+<span class="kw">public record</span> <span class="ty">Circle</span>(<span class="kw">double</span> R) : <span class="ty">IShape</span>
+{ <span class="kw">public double</span> <span class="good">Area</span>() =&gt; <span class="ty">Math</span>.PI * R * R; }
+
+<span class="kw">public record</span> <span class="ty">Square</span>(<span class="kw">double</span> Side) : <span class="ty">IShape</span>
+{ <span class="kw">public double</span> <span class="good">Area</span>() =&gt; Side * Side; }
+
+<span class="cmt">// New shapes plug in — no existing code changes.</span></div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>SOLID is a guide, not a religion.</strong> Each principle reduces coupling but adds indirection.
+      Applied blindly you get a maze of one-method interfaces. Apply them where change is likely; leave simple,
+      stable code simple.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 03 PRINCIPLES -->
+<div class="section" id="principles">
+  <div class="sec-eyebrow">Topic 03</div>
+  <div class="sec-title">DRY, KISS, YAGNI &amp; Friends</div>
+  <div class="sec-sub">The maxims that keep designs honest. Most over-engineering comes from forgetting the last two.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">♻️</div>
+      <div class="comp-name">DRY</div>
+      <div class="comp-desc">Don't Repeat Yourself — every piece of knowledge has one authoritative home. But beware: duplicated <em>code</em> isn't always duplicated <em>knowledge</em>.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">💋</div>
+      <div class="comp-name">KISS</div>
+      <div class="comp-desc">Keep It Simple — the simplest thing that works. Complexity must earn its place.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔮</div>
+      <div class="comp-name">YAGNI</div>
+      <div class="comp-desc">You Aren't Gonna Need It — don't build for imagined future requirements. Add flexibility when the need is real.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧩</div>
+      <div class="comp-name">Composition over inheritance</div>
+      <div class="comp-desc">Prefer assembling behavior from parts over deep class hierarchies. Inheritance is rigid; composition flexes.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔗</div>
+      <div class="comp-name">Low coupling, high cohesion</div>
+      <div class="comp-desc">Modules should depend on little (loose coupling) and group related things (high cohesion). The core of good structure.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚪</div>
+      <div class="comp-name">Law of Demeter</div>
+      <div class="comp-desc">Talk only to your friends — <code>a.B.C.do()</code> chains couple you to internals. Ask, don't reach through.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>The DRY trap:</strong> over-aggressive DRY creates the wrong abstraction — coupling unrelated code that
+      merely <em>looked</em> similar. "A little copying is better than a little dependency." Wait until you see the
+      pattern three times before extracting it (the Rule of Three).
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 04 CODE SMELLS -->
+<div class="section" id="smells">
+  <div class="sec-eyebrow">Topic 04</div>
+  <div class="sec-title">Code Smells — Symptoms of Decay</div>
+  <div class="sec-sub">Smells aren't bugs; they're hints that the design will hurt to change. Learn to notice them early.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Smell</th><th>What you see</th><th>Typical fix</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Long method</strong></td><td>Hundreds of lines, many responsibilities</td><td>Extract method, decompose</td></tr>
+      <tr><td><strong>God class</strong></td><td>One class that knows/does everything</td><td>Extract class, apply SRP</td></tr>
+      <tr><td><strong>Long parameter list</strong></td><td>5+ args, easy to mis-order</td><td>Parameter object, builder</td></tr>
+      <tr><td><strong>Feature envy</strong></td><td>A method uses another class's data more than its own</td><td>Move method to where the data lives</td></tr>
+      <tr><td><strong>Shotgun surgery</strong></td><td>One change forces edits in many places</td><td>Consolidate responsibility</td></tr>
+      <tr><td><strong>Primitive obsession</strong></td><td>Strings/ints for domain concepts</td><td>Value objects (<code>Money</code>, <code>Email</code>)</td></tr>
+      <tr><td><strong>Magic numbers</strong></td><td>Unexplained literals</td><td>Named constants / enums</td></tr>
+      <tr><td><strong>Deep nesting</strong></td><td>Arrow-shaped <code>if</code> pyramids</td><td>Guard clauses, early return</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🧭</div>
+    <div class="callout-body">
+      <strong>Smells guide, tests protect.</strong> Don't refactor on a smell alone — confirm it's painful to change,
+      ensure tests cover the behavior, then improve in small, verified steps. Refactoring without tests is just
+      rewriting and praying.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 05 CREATIONAL -->
+<div class="section" id="creational">
+  <div class="sec-eyebrow">Patterns 05</div>
+  <div class="sec-title">Creational Patterns — How Objects Are Made</div>
+  <div class="sec-sub">Decouple your code from the messy details of construction.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🏭</div>
+      <div class="comp-name">Factory Method</div>
+      <div class="comp-desc">Defer instantiation to a method/subclass so callers depend on an interface, not a concrete type. e.g. <code>IHttpClientFactory</code>.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🏢</div>
+      <div class="comp-name">Abstract Factory</div>
+      <div class="comp-desc">Create families of related objects (e.g. a UI toolkit per OS) without naming concretes.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔨</div>
+      <div class="comp-name">Builder</div>
+      <div class="comp-desc">Construct complex objects step-by-step with a fluent API. Great for many optional parameters.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">1️⃣</div>
+      <div class="comp-name">Singleton</div>
+      <div class="comp-desc">One shared instance. Useful for config/caches — but a global, so prefer DI-managed singletons over the classic static.</div>
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Builder — readable construction of a complex object</span>
+  <div class="code"><span class="kw">var</span> report = <span class="kw">new</span> <span class="ty">ReportBuilder</span>()
+    .<span class="good">WithTitle</span>(<span class="st">"Q2 Sales"</span>)
+    .<span class="good">AddSection</span>(<span class="st">"Revenue"</span>, revenueData)
+    .<span class="good">AddSection</span>(<span class="st">"Costs"</span>, costData)
+    .<span class="good">WithFooter</span>(<span class="st">"Confidential"</span>)
+    .<span class="nm">Build</span>();</div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🚫</div>
+    <div class="callout-body">
+      <strong>Singleton caution:</strong> the classic static singleton is global mutable state — it hides
+      dependencies, breaks testability, and risks thread-safety bugs. In modern apps, register a single instance in
+      the <strong>DI container</strong> instead (lifetime = singleton) so it stays injectable and mockable.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 06 STRUCTURAL -->
+<div class="section" id="structural">
+  <div class="sec-eyebrow">Patterns 06</div>
+  <div class="sec-title">Structural Patterns — How Objects Compose</div>
+  <div class="sec-sub">Assemble objects and classes into larger structures while keeping them flexible.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔌</div>
+      <div class="comp-name">Adapter</div>
+      <div class="comp-desc">Wrap an incompatible interface to make it fit. The classic "translate this third-party API to ours".</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🎀</div>
+      <div class="comp-name">Decorator</div>
+      <div class="comp-desc">Wrap an object to add behavior (logging, caching, retry) without changing it. Composable &amp; SRP-friendly.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚪</div>
+      <div class="comp-name">Facade</div>
+      <div class="comp-desc">A simple front over a complex subsystem. One clean entry point hides the messy internals.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛡️</div>
+      <div class="comp-name">Proxy</div>
+      <div class="comp-desc">A stand-in that controls access — lazy loading, caching, access control, remote calls.</div>
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Decorator — add caching without touching the service</span>
+  <div class="code"><span class="kw">public class</span> <span class="ty">CachingProductService</span> : <span class="ty">IProductService</span>
+{
+    <span class="kw">private readonly</span> <span class="ty">IProductService</span> _inner;   <span class="cmt">// the real service</span>
+    <span class="kw">private readonly</span> <span class="ty">IMemoryCache</span> _cache;
+
+    <span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">Product</span>&gt; <span class="good">GetAsync</span>(<span class="ty">int</span> id) =&gt;
+        <span class="kw">await</span> _cache.<span class="nm">GetOrCreateAsync</span>(id, _ =&gt; _inner.<span class="nm">GetAsync</span>(id)); <span class="cmt">// wraps</span>
+}</div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 07 BEHAVIORAL -->
+<div class="section" id="behavioral">
+  <div class="sec-eyebrow">Patterns 07</div>
+  <div class="sec-title">Behavioral Patterns — How Objects Collaborate</div>
+  <div class="sec-sub">Define how objects interact and distribute responsibility.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🧭</div>
+      <div class="comp-name">Strategy</div>
+      <div class="comp-desc">Swap interchangeable algorithms behind an interface (sorting, pricing, payment). Pick at runtime.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">👀</div>
+      <div class="comp-name">Observer</div>
+      <div class="comp-desc">Publish/subscribe — observers react to a subject's changes. The basis of events &amp; reactive UIs.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📬</div>
+      <div class="comp-name">Command</div>
+      <div class="comp-desc">Encapsulate a request as an object — enables queues, undo/redo, logging. Core of CQRS/MediatR.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔁</div>
+      <div class="comp-name">Template Method</div>
+      <div class="comp-desc">A base defines the skeleton; subclasses fill in steps. Shared flow, varied details.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚦</div>
+      <div class="comp-name">State</div>
+      <div class="comp-desc">Behavior changes with internal state — replace sprawling state <code>if/switch</code> with state objects.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔗</div>
+      <div class="comp-name">Chain of Responsibility</div>
+      <div class="comp-desc">Pass a request along a chain of handlers until one handles it. e.g. middleware pipelines.</div>
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Strategy — pluggable pricing</span>
+  <div class="code"><span class="kw">public interface</span> <span class="ty">IPricingStrategy</span> { <span class="kw">decimal</span> <span class="nm">Price</span>(<span class="ty">Cart</span> c); }
+
+<span class="kw">public class</span> <span class="ty">RegularPricing</span> : <span class="ty">IPricingStrategy</span> { ... }
+<span class="kw">public class</span> <span class="ty">BlackFridayPricing</span> : <span class="ty">IPricingStrategy</span> { ... }
+
+<span class="cmt">// Inject the right strategy; the checkout code never changes.</span>
+<span class="kw">var</span> total = _strategy.<span class="good">Price</span>(cart);</div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-body">
+      <strong>Patterns are a vocabulary.</strong> Their biggest value is shared language: saying "let's decorate the
+      repository with caching" communicates a whole design instantly. Recognize them in frameworks you already use —
+      ASP.NET middleware (chain of responsibility), <code>IObservable</code> (observer), MediatR (command/mediator).
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 08 REFACTORING -->
+<div class="section" id="refactoring">
+  <div class="sec-eyebrow">Practice 08</div>
+  <div class="sec-title">Refactoring — Changing Structure, Not Behavior</div>
+  <div class="sec-sub">Refactoring improves the design of existing code without changing what it does — in small, test-protected steps.</div>
+
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Ensure tests exist.</strong> A green test suite is your safety net — it proves behavior is preserved.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Make one small change.</strong> Extract a method, rename a variable, introduce a parameter object.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Run the tests.</strong> Green? Commit. Red? Revert — the step was too big or wrong.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Repeat.</strong> Many tiny safe steps beat one risky rewrite.</div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel panel-neutral">
+      <h4>Common refactorings</h4>
+      <ul>
+        <li>Extract Method / Extract Class</li>
+        <li>Rename for clarity</li>
+        <li>Replace magic number with constant</li>
+        <li>Introduce parameter object</li>
+        <li>Replace conditional with polymorphism</li>
+        <li>Guard clauses to flatten nesting</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>When to refactor</h4>
+      <ul>
+        <li>Before adding a feature to messy code (clean, then add)</li>
+        <li>When you keep hitting the same friction</li>
+        <li>During code review feedback</li>
+        <li>As part of the Boy Scout Rule, opportunistically</li>
+        <li><strong>Not</strong> a separate "refactor sprint" with no goal</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🛑</div>
+    <div class="callout-body">
+      <strong>Refactoring vs rewriting:</strong> refactoring preserves behavior in small steps; a rewrite throws it
+      away and risks reintroducing every old bug. Prefer the strangler-fig approach — incrementally replace parts of
+      a system while it keeps running.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- 09 WHEN NOT TO -->
+<div class="section" id="tradeoffs">
+  <div class="sec-eyebrow">Judgement 09</div>
+  <div class="sec-title">When NOT to Use a Pattern</div>
+  <div class="sec-sub">The senior skill isn't knowing patterns — it's knowing when the cost of abstraction outweighs the benefit.</div>
+
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>Over-engineering signs</h4>
+      <ul>
+        <li>An interface with exactly one implementation, forever</li>
+        <li>A factory that just calls <code>new</code></li>
+        <li>A repository that only forwards to EF Core</li>
+        <li>Layers of indirection to read a config value</li>
+        <li>Patterns applied to satisfy a checklist, not a need</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Earn the abstraction</h4>
+      <ul>
+        <li>Add it when a <em>second</em> real variation appears</li>
+        <li>Optimize for deletion &amp; change, not prediction</li>
+        <li>Prefer the simplest design that meets the requirement</li>
+        <li>Make the code obvious before making it clever</li>
+        <li>Measure complexity cost vs flexibility gained</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-body">
+      <strong>The senior verdict:</strong> "make it work, make it right, make it fast — in that order." Every
+      abstraction is a bet that change will come. Good engineers place those bets where change is likely, and keep
+      everything else boring, direct, and easy to delete. Simplicity is a feature.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  Senior Engineering Guide &nbsp;·&nbsp; Clean Code, SOLID &amp; Design Patterns &nbsp;·&nbsp;
+  <a href="index.html">← AI Architecture Guide</a> &nbsp;·&nbsp;
+  <a href="dotnet-questions.html">.NET Guide</a> &nbsp;·&nbsp;
+  <a href="system-design-concepts.html">System Design</a> &nbsp;·&nbsp;
+  <a href="data-structures-algorithms.html">DSA</a> &nbsp;·&nbsp;
+  <a href="devops-cicd-cloud.html">DevOps</a> &nbsp;·&nbsp;
+  <a href="api-design.html">API Design</a> &nbsp;·&nbsp;
+  <a href="database-deep-dive.html">Databases</a>
+</footer>
+
+<script>
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.classList.toggle('visible', window.scrollY > 600);
+  });
+</script>
+
+</body>
+</html>

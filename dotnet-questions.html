@@ -280,6 +280,21 @@
   <a href="#efcore">      <span class="dot" style="background:#10b981"></span> EF Core &amp; N+1</a>
   <a href="#cloud">       <span class="dot" style="background:#f59e0b"></span> Cloud Networking</a>
   <a href="#storage">     <span class="dot" style="background:#f43f5e"></span> Storage Choices</a>
+  <a href="#types">       <span class="dot" style="background:#3b82f6"></span> Type System</a>
+  <a href="#memory">      <span class="dot" style="background:#8b5cf6"></span> Memory &amp; GC</a>
+  <a href="#collections"> <span class="dot" style="background:#06b6d4"></span> Collections &amp; LINQ</a>
+  <a href="#concurrency"> <span class="dot" style="background:#10b981"></span> Concurrency &amp; Locks</a>
+  <a href="#oop">         <span class="dot" style="background:#f59e0b"></span> OOP &amp; SOLID</a>
+  <a href="#aspnet">      <span class="dot" style="background:#f43f5e"></span> ASP.NET Core</a>
+  <a href="#resilience">  <span class="dot" style="background:#a78bfa"></span> Resilience &amp; HttpClient</a>
+  <a href="#security">    <span class="dot" style="background:#06b6d4"></span> Security</a>
+  <a href="#testing">     <span class="dot" style="background:#10b981"></span> Testing</a>
+  <a href="#microservices"><span class="dot" style="background:#3b82f6"></span> Microservices</a>
+  <a href="#messaging">   <span class="dot" style="background:#8b5cf6"></span> Async &amp; Event Messaging</a>
+  <a href="#distcache">   <span class="dot" style="background:#06b6d4"></span> Distributed Caching</a>
+  <a href="#ddd">         <span class="dot" style="background:#10b981"></span> DDD</a>
+  <a href="#cqrs">        <span class="dot" style="background:#f59e0b"></span> CQRS &amp; Event Sourcing</a>
+  <a href="#streaming">   <span class="dot" style="background:#f43f5e"></span> Large Data Streaming</a>
   <a href="#qa">          <span class="dot" style="background:#a78bfa"></span> Interview Q&amp;A</a>
   <a href="#ops">         <span class="dot" style="background:#06b6d4"></span> Production Ops</a>
   <a href="#task">        <span class="dot" style="background:#10b981"></span> Bug Fix Task</a>
@@ -634,6 +649,1110 @@ flowchart TB
 
 <div class="hr"></div>
 
+<!-- ══════════════ TOPIC 07 — TYPE SYSTEM ══════════════ -->
+<div class="section" id="types">
+  <div class="sec-eyebrow">Topic 07</div>
+  <div class="sec-title">C# Type System — Value vs Reference, Boxing, Records &amp; Strings</div>
+  <div class="sec-sub">Where data lives (stack vs heap), how it's copied, and the hidden allocations that surprise people in hot paths.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Value types (struct, enum, primitives)</h4>
+      <ul>
+        <li>Hold the data directly; copied <strong>by value</strong> on assignment/pass</li>
+        <li>Usually stack-allocated (or inline inside a heap object)</li>
+        <li>No null by default (unless <code>Nullable&lt;T&gt;</code> / <code>T?</code>)</li>
+        <li>Great for small, immutable, short-lived data</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Reference types (class, interface, delegate, string)</h4>
+      <ul>
+        <li>Variable holds a <strong>reference</strong>; object lives on the heap</li>
+        <li>Copied <strong>by reference</strong> — two variables, one object</li>
+        <li>Can be <code>null</code>; managed by the GC</li>
+        <li>Equality is identity by default (unless overridden)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">📦</div>
+    <div class="callout-body">
+      <strong>Boxing &amp; unboxing:</strong> assigning a value type to <code>object</code> / an interface
+      <em>boxes</em> it — a heap allocation + copy. Unboxing copies back and casts. In tight loops this is a silent
+      performance killer. Use generics (<code>List&lt;int&gt;</code>, not <code>ArrayList</code>) and avoid
+      <code>object</code> APIs on value types.
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">Hidden boxing</span>
+  <div class="code"><span class="ty">int</span> n = <span class="nm">42</span>;
+<span class="ty">object</span> boxed = n;          <span class="bad">// boxing — heap alloc + copy</span>
+<span class="ty">int</span> back = (<span class="ty">int</span>)boxed;     <span class="bad">// unboxing — copy back</span>
+<span class="ty">ArrayList</span> list = <span class="kw">new</span>();
+list.<span class="nm">Add</span>(n);                <span class="bad">// boxes every int</span></div>
+
+  <span class="code-label cl-good">No boxing — generics keep value types unboxed</span>
+  <div class="code"><span class="ty">List</span>&lt;<span class="ty">int</span>&gt; list = <span class="kw">new</span>();
+list.<span class="good">Add</span>(<span class="nm">42</span>);               <span class="cmt">// stays an int, no allocation</span></div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🧊</div>
+      <div class="comp-name">record / record struct</div>
+      <div class="comp-desc">Immutable-by-convention types with <strong>value-based equality</strong>, <code>with</code>-expressions, and deconstruction. Ideal for DTOs &amp; domain values. <code>record class</code> is a reference type; <code>record struct</code> is a value type.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔤</div>
+      <div class="comp-name">string immutability</div>
+      <div class="comp-desc">Strings are immutable reference types — every "mutation" makes a new object. Concatenating in a loop allocates repeatedly; use <code>StringBuilder</code> for many edits.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🎯</div>
+      <div class="comp-name">Span&lt;T&gt; / Memory&lt;T&gt;</div>
+      <div class="comp-desc">Allocation-free views over arrays/strings/stack memory. <code>Span&lt;T&gt;</code> is a <code>ref struct</code> (stack-only); enables slicing &amp; parsing with zero copies.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🪢</div>
+      <div class="comp-name">ref / in / out</div>
+      <div class="comp-desc"><code>ref</code> passes by reference (read/write), <code>in</code> passes a readonly reference (avoids copying big structs), <code>out</code> must be assigned by the callee.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">
+      <strong>struct vs class heuristic:</strong> reach for a <code>struct</code> only when the type is small
+      (≈16 bytes), immutable, logically a single value, and short-lived. Otherwise use a <code>class</code> — large
+      mutable structs cause expensive copies and subtle bugs.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 08 — MEMORY & GC ══════════════ -->
+<div class="section" id="memory">
+  <div class="sec-eyebrow">Topic 08</div>
+  <div class="sec-title">Memory Management — Garbage Collection, IDisposable &amp; Leaks</div>
+  <div class="sec-sub">.NET is managed, but "managed" ≠ "leak-proof". Senior engineers know what the GC does and where it can't help.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">👶</div>
+      <div class="comp-name">Gen 0 / 1 / 2</div>
+      <div class="comp-desc">Generational GC: new objects start in <strong>Gen 0</strong> (collected often &amp; cheaply). Survivors are promoted to Gen 1, then Gen 2 (collected rarely). Most objects die young — that's the design assumption.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🐘</div>
+      <div class="comp-name">Large Object Heap</div>
+      <div class="comp-desc">Objects ≥ 85 KB go on the <strong>LOH</strong>, collected with Gen 2 and not compacted by default → fragmentation. Pool large buffers (<code>ArrayPool&lt;T&gt;</code>) instead of reallocating.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧹</div>
+      <div class="comp-name">IDisposable / using</div>
+      <div class="comp-desc">Deterministic cleanup of <strong>unmanaged</strong> resources (sockets, file handles, DB connections). <code>using</code> guarantees <code>Dispose()</code> even on exceptions.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚰️</div>
+      <div class="comp-name">Finalizers</div>
+      <div class="comp-desc">A safety net (<code>~Type()</code>) for unmanaged resources if <code>Dispose</code> wasn't called. They delay collection (2 GC cycles) — implement the full Dispose pattern, don't rely on finalizers.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🩸</div>
+    <div class="callout-body">
+      <strong>Yes, .NET can leak.</strong> Common causes: lingering <strong>event handler</strong> subscriptions
+      (subscriber kept alive by publisher), <strong>static</strong> collections that only grow, undisposed
+      <code>IDisposable</code>s, captured variables in long-lived closures/timers, and <strong>captive
+      dependencies</strong> in DI. The GC can't collect what's still reachable.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Full Dispose pattern</span>
+  <div class="code"><span class="kw">public class</span> <span class="ty">FileService</span> : <span class="ty">IDisposable</span>
+{
+    <span class="kw">private</span> <span class="ty">FileStream</span>? _stream;
+    <span class="kw">private bool</span> _disposed;
+
+    <span class="kw">public void</span> <span class="nm">Dispose</span>()
+    {
+        <span class="nm">Dispose</span>(<span class="kw">true</span>);
+        <span class="ty">GC</span>.<span class="nm">SuppressFinalize</span>(<span class="kw">this</span>);   <span class="cmt">// no need to finalize, already cleaned</span>
+    }
+
+    <span class="kw">protected virtual void</span> <span class="nm">Dispose</span>(<span class="ty">bool</span> disposing)
+    {
+        <span class="kw">if</span> (_disposed) <span class="kw">return</span>;
+        <span class="kw">if</span> (disposing) _stream?.<span class="nm">Dispose</span>(); <span class="cmt">// managed resources</span>
+        _disposed = <span class="kw">true</span>;
+    }
+}</div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">⚡</div>
+    <div class="callout-body">
+      <strong>Reduce GC pressure:</strong> avoid needless allocations in hot paths (boxing, LINQ closures,
+      string concatenation), use <code>Span&lt;T&gt;</code>/<code>stackalloc</code>, pool buffers with
+      <code>ArrayPool&lt;T&gt;</code>, prefer <code>ValueTask</code> for hot async that often completes
+      synchronously, and stream large payloads instead of buffering. Measure with the GC counters / <code>dotnet-counters</code>.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 09 — COLLECTIONS & LINQ ══════════════ -->
+<div class="section" id="collections">
+  <div class="sec-eyebrow">Topic 09</div>
+  <div class="sec-title">Collections &amp; LINQ — Pick the Right Structure, Know Deferred Execution</div>
+  <div class="sec-sub">Choosing the wrong collection turns an O(1) lookup into an O(n) scan; misunderstanding deferred execution causes double-enumeration and surprise queries.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Collection</th><th>Lookup</th><th>Use when</th></tr></thead>
+    <tbody>
+      <tr><td><code>List&lt;T&gt;</code></td><td>O(n) by value, O(1) by index</td><td>Ordered, index access, append-heavy</td></tr>
+      <tr><td><code>Dictionary&lt;K,V&gt;</code></td><td>O(1) average by key</td><td>Keyed lookups, caches, de-dup by key</td></tr>
+      <tr><td><code>HashSet&lt;T&gt;</code></td><td>O(1) average contains</td><td>Uniqueness, fast membership tests</td></tr>
+      <tr><td><code>Queue&lt;T&gt; / Stack&lt;T&gt;</code></td><td>O(1) enqueue/push</td><td>FIFO / LIFO processing</td></tr>
+      <tr><td><code>ConcurrentDictionary</code></td><td>O(1) thread-safe</td><td>Shared mutable map across threads</td></tr>
+      <tr><td><code>ImmutableArray / List</code></td><td>O(1)/O(log n)</td><td>Shared read-only data, snapshot semantics</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⏳</div>
+    <div class="callout-body">
+      <strong>Deferred (lazy) execution:</strong> LINQ operators like <code>Where</code>, <code>Select</code>,
+      <code>OrderBy</code> don't run until you enumerate (<code>foreach</code>, <code>ToList</code>,
+      <code>Count</code>, <code>First</code>). The query is re-executed <em>every</em> time you iterate — so
+      enumerating twice hits the DB twice. Materialize once with <code>ToList()</code> when you'll reuse the result.
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">Double enumeration — query runs twice</span>
+  <div class="code"><span class="kw">var</span> q = _context.Orders.<span class="nm">Where</span>(o =&gt; o.Active);  <span class="cmt">// nothing executed yet</span>
+<span class="kw">var</span> count = q.<span class="bad">Count</span>();    <span class="cmt">// SQL round-trip #1</span>
+<span class="kw">foreach</span> (<span class="kw">var</span> o <span class="kw">in</span> q) { ... }       <span class="bad">// SQL round-trip #2 — re-queried!</span></div>
+
+  <span class="code-label cl-good">Materialize once, reuse</span>
+  <div class="code"><span class="kw">var</span> orders = <span class="kw">await</span> _context.Orders
+    .<span class="good">Where</span>(o =&gt; o.Active)
+    .<span class="nm">ToListAsync</span>();             <span class="cmt">// one round-trip</span>
+<span class="kw">var</span> count = orders.<span class="good">Count</span>;     <span class="cmt">// in-memory, free</span></div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Custom key equality:</strong> using a type as a <code>Dictionary</code>/<code>HashSet</code> key
+      requires correct <code>GetHashCode</code> + <code>Equals</code> (records give you this for free). A mutable
+      key whose hash changes after insertion becomes unfindable — a classic subtle bug.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 10 — CONCURRENCY ══════════════ -->
+<div class="section" id="concurrency">
+  <div class="sec-eyebrow">Topic 10</div>
+  <div class="sec-title">Concurrency &amp; Thread Safety — Locks, Atomics &amp; Deadlocks</div>
+  <div class="sec-sub">Async solves "don't block on I/O". This solves "multiple threads touching shared mutable state at once."</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔒</div>
+      <div class="comp-name">lock / Monitor</div>
+      <div class="comp-desc">Mutual exclusion over a critical section. Lock on a <strong>private readonly object</strong>, keep the section tiny, and <strong>never <code>await</code> inside a lock</strong>.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">➕</div>
+      <div class="comp-name">Interlocked</div>
+      <div class="comp-desc">Lock-free atomic operations (<code>Increment</code>, <code>Add</code>, <code>CompareExchange</code>) for simple counters/flags — far cheaper than a lock.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚦</div>
+      <div class="comp-name">SemaphoreSlim</div>
+      <div class="comp-desc">Async-friendly throttle (<code>await WaitAsync()</code>). The correct way to limit concurrency or guard a critical section in async code.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧊</div>
+      <div class="comp-name">Immutable / Concurrent</div>
+      <div class="comp-desc">Best of all: avoid shared mutable state. Use immutable types or <code>System.Collections.Concurrent</code> so no explicit locking is needed.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">💀</div>
+    <div class="callout-body">
+      <strong>Deadlocks</strong> happen when two threads each hold a lock the other needs (circular wait). Avoid by
+      acquiring locks in a <strong>consistent global order</strong>, keeping critical sections short, using
+      timeouts, and preferring lock-free or message-passing designs. Classic .NET deadlock: blocking on async with
+      <code>.Result</code>/<code>.Wait()</code> on a thread with a <code>SynchronizationContext</code>.
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">Race condition — lost updates</span>
+  <div class="code"><span class="kw">private int</span> _count;
+<span class="kw">public void</span> <span class="nm">Add</span>() =&gt; _count++;   <span class="bad">// read-modify-write is NOT atomic</span></div>
+
+  <span class="code-label cl-good">Atomic — Interlocked</span>
+  <div class="code"><span class="kw">private int</span> _count;
+<span class="kw">public void</span> <span class="nm">Add</span>() =&gt; <span class="ty">Interlocked</span>.<span class="good">Increment</span>(<span class="kw">ref</span> _count);</div>
+
+  <span class="code-label cl-good">Throttle concurrency in async with SemaphoreSlim</span>
+  <div class="code"><span class="kw">private readonly</span> <span class="ty">SemaphoreSlim</span> _gate = <span class="kw">new</span>(<span class="nm">5</span>); <span class="cmt">// max 5 at once</span>
+
+<span class="kw">public async</span> <span class="ty">Task</span> <span class="nm">ProcessAsync</span>(<span class="ty">Item</span> item)
+{
+    <span class="kw">await</span> _gate.<span class="good">WaitAsync</span>();
+    <span class="kw">try</span> { <span class="kw">await</span> <span class="nm">DoWorkAsync</span>(item); }
+    <span class="kw">finally</span> { _gate.<span class="nm">Release</span>(); }    <span class="cmt">// always release</span>
+}</div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">✅</div>
+    <div class="callout-body">
+      <strong>Volatile vs lock:</strong> <code>volatile</code> only guarantees visibility/ordering of a single
+      field — it does <em>not</em> make compound operations atomic. For anything beyond a single flag read, use
+      <code>Interlocked</code> or a <code>lock</code>.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 11 — OOP & SOLID ══════════════ -->
+<div class="section" id="oop">
+  <div class="sec-eyebrow">Topic 11</div>
+  <div class="sec-title">OOP, SOLID &amp; Design Patterns</div>
+  <div class="sec-sub">The vocabulary interviewers expect you to apply — not just recite — when defending a design.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Principle</th><th>Meaning</th><th>In .NET</th></tr></thead>
+    <tbody>
+      <tr><td><strong>S</strong> — Single Responsibility</td><td>A class has one reason to change</td><td>Thin controllers, focused services, handlers per use-case</td></tr>
+      <tr><td><strong>O</strong> — Open/Closed</td><td>Open to extension, closed to modification</td><td>Strategy/polymorphism, DI, plug-in handlers</td></tr>
+      <tr><td><strong>L</strong> — Liskov Substitution</td><td>Subtypes must be usable as their base</td><td>Don't throw <code>NotSupportedException</code> in overrides</td></tr>
+      <tr><td><strong>I</strong> — Interface Segregation</td><td>Many small interfaces &gt; one fat one</td><td><code>IReadRepository</code> vs <code>IWriteRepository</code></td></tr>
+      <tr><td><strong>D</strong> — Dependency Inversion</td><td>Depend on abstractions, not concretes</td><td>Inject interfaces via the DI container</td></tr>
+    </tbody>
+  </table>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🏭</div>
+      <div class="comp-name">Factory</div>
+      <div class="comp-desc">Encapsulate object creation. In .NET often <code>IHttpClientFactory</code>, <code>IServiceScopeFactory</code>, or a typed <code>Func&lt;T&gt;</code>.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧭</div>
+      <div class="comp-name">Strategy</div>
+      <div class="comp-desc">Swap an algorithm behind an interface. Register multiple implementations and resolve by key/condition.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🎀</div>
+      <div class="comp-name">Decorator</div>
+      <div class="comp-desc">Wrap a service to add behavior (logging, caching, retries) without touching it — composable via DI.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📬</div>
+      <div class="comp-name">Mediator / CQRS</div>
+      <div class="comp-desc">Decouple senders from handlers (MediatR). Separate read models from write models for complex domains.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>Pragmatism over dogma:</strong> patterns are tools, not goals. A senior knows when <em>not</em> to
+      apply one — premature abstraction (repository-over-EF that just forwards calls, micro-interfaces with one
+      impl) adds cost without benefit. Apply patterns to solve real pain, keep YAGNI &amp; KISS in mind.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 12 — ASP.NET CORE ══════════════ -->
+<div class="section" id="aspnet">
+  <div class="sec-eyebrow">Topic 12</div>
+  <div class="sec-title">ASP.NET Core — Pipeline, Middleware, Filters &amp; Config</div>
+  <div class="sec-sub">A request flows through an ordered middleware pipeline. Knowing the order and the extension points is core senior knowledge.</div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Request pipeline (order matters)</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  R(("Request")) --> EX["Exception\nHandler"]
+  EX --> HSTS["HSTS / HTTPS\nRedirect"]
+  HSTS --> ST["Static Files"]
+  ST --> RT["Routing"]
+  RT --> CORS["CORS"]
+  CORS --> AUTHN["Authentication"]
+  AUTHN --> AUTHZ["Authorization"]
+  AUTHZ --> EP["Endpoint\n(Controller / Minimal API)"]
+  EP --> RESP(("Response"))
+</pre>
+    </div>
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🧱</div>
+      <div class="comp-name">Middleware</div>
+      <div class="comp-desc">Cross-cutting components in a pipeline; each can short-circuit or call <code>next()</code>. Order is critical (auth before authorization, exception handler first).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🪝</div>
+      <div class="comp-name">Filters</div>
+      <div class="comp-desc">MVC-scoped hooks: <strong>Authorization → Resource → Action → Exception → Result</strong>. Use for model validation, logging, caching around actions.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚙️</div>
+      <div class="comp-name">Options pattern</div>
+      <div class="comp-desc">Strongly-typed config via <code>IOptions&lt;T&gt;</code> / <code>IOptionsSnapshot&lt;T&gt;</code> (per-request) / <code>IOptionsMonitor&lt;T&gt;</code> (live reload).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔑</div>
+      <div class="comp-name">AuthN vs AuthZ</div>
+      <div class="comp-desc"><strong>Authentication</strong> = who are you (JWT/cookie). <strong>Authorization</strong> = what may you do (roles, policies, claims). They run as separate middleware in that order.</div>
+    </div>
+  </div>
+
+  <span class="code-label cl-neutral">Custom middleware</span>
+  <div class="code"><span class="kw">public class</span> <span class="ty">TimingMiddleware</span>
+{
+    <span class="kw">private readonly</span> <span class="ty">RequestDelegate</span> _next;
+    <span class="kw">public</span> <span class="nm">TimingMiddleware</span>(<span class="ty">RequestDelegate</span> next) =&gt; _next = next;
+
+    <span class="kw">public async</span> <span class="ty">Task</span> <span class="nm">InvokeAsync</span>(<span class="ty">HttpContext</span> ctx)
+    {
+        <span class="kw">var</span> sw = <span class="ty">Stopwatch</span>.<span class="nm">StartNew</span>();
+        <span class="kw">await</span> _next(ctx);                  <span class="cmt">// call the rest of the pipeline</span>
+        sw.<span class="nm">Stop</span>();
+        ctx.Response.Headers[<span class="st">"X-Elapsed-ms"</span>] = sw.ElapsedMilliseconds.<span class="nm">ToString</span>();
+    }
+}</div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧩</div>
+    <div class="callout-body">
+      <strong>Middleware vs Filter:</strong> middleware is global and runs for <em>every</em> request (even
+      static files); filters are MVC-aware and run only around actions, with access to model state and action
+      context. Use middleware for truly cross-cutting infra (logging, auth, exception handling); filters for
+      action-level concerns (validation, result shaping).
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 13 — RESILIENCE & HTTPCLIENT ══════════════ -->
+<div class="section" id="resilience">
+  <div class="sec-eyebrow">Topic 13</div>
+  <div class="sec-title">HttpClient, Resilience &amp; Microservices Patterns</div>
+  <div class="sec-sub">Distributed systems fail partially and constantly. Seniors design for failure rather than assuming the happy path.</div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🔌</div>
+    <div class="callout-body">
+      <strong>Socket exhaustion:</strong> <code>new HttpClient()</code> per request leaks sockets stuck in
+      <code>TIME_WAIT</code> and eventually fails. Use <code>IHttpClientFactory</code> (typed/named clients) so
+      handlers are pooled and DNS rotation works. Never wrap a single <code>HttpClient</code> in <code>using</code>.
+    </div>
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔁</div>
+      <div class="comp-name">Retry + backoff</div>
+      <div class="comp-desc">Retry <strong>transient</strong> failures with exponential backoff + jitter. Only retry idempotent operations; cap attempts to avoid amplifying an outage.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⚡</div>
+      <div class="comp-name">Circuit breaker</div>
+      <div class="comp-desc">After N failures, "open" the circuit and fail fast for a cooldown — stop hammering a sick dependency, then half-open to test recovery. Polly provides both.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⏱️</div>
+      <div class="comp-name">Timeout + bulkhead</div>
+      <div class="comp-desc">Bound every external call with a timeout; isolate resource pools (bulkhead) so one slow dependency can't starve the whole app.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📤</div>
+      <div class="comp-name">Outbox / idempotency</div>
+      <div class="comp-desc">For cross-service consistency, write events to an outbox in the same transaction and publish reliably; make consumers idempotent (dedupe by message id).</div>
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Typed client with Polly resilience (retry + circuit breaker)</span>
+  <div class="code">builder.Services.<span class="nm">AddHttpClient</span>&lt;<span class="ty">OrdersClient</span>&gt;(c =&gt;
+        c.BaseAddress = <span class="kw">new</span>(<span class="st">"https://orders.api"</span>))
+    .<span class="good">AddStandardResilienceHandler</span>();   <span class="cmt">// retry + breaker + timeout (Microsoft.Extensions.Http.Resilience)</span></div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-body">
+      <strong>Consistency trade-offs:</strong> distributed transactions are usually the wrong tool. Prefer
+      <strong>eventual consistency</strong> via async messaging + the outbox + saga patterns, design for
+      <strong>idempotency</strong> and <strong>at-least-once</strong> delivery, and make operations safe to retry.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 14 — SECURITY ══════════════ -->
+<div class="section" id="security">
+  <div class="sec-eyebrow">Topic 14</div>
+  <div class="sec-title">Security — OWASP for .NET Engineers</div>
+  <div class="sec-sub">Security is a senior's responsibility, not an afterthought. The high-frequency issues and their .NET fixes.</div>
+
+  <table class="styled-table">
+    <thead><tr><th>Risk</th><th>How it bites</th><th>.NET defence</th></tr></thead>
+    <tbody>
+      <tr><td><strong>SQL Injection</strong></td><td>String-concatenated queries</td><td>Parameterized queries / EF Core (never <code>FromSqlRaw</code> with interpolation; use <code>FromSqlInterpolated</code>)</td></tr>
+      <tr><td><strong>Broken AuthZ</strong></td><td>Missing/forgeable access checks</td><td><code>[Authorize]</code> policies, resource-based auth, server-side checks always</td></tr>
+      <tr><td><strong>XSS</strong></td><td>Rendering untrusted input</td><td>Razor auto-encodes; avoid <code>Html.Raw</code>; set CSP headers</td></tr>
+      <tr><td><strong>CSRF</strong></td><td>Forged cross-site form posts</td><td>Antiforgery tokens; <code>SameSite</code> cookies</td></tr>
+      <tr><td><strong>Secrets in code</strong></td><td>Keys in source/appsettings</td><td>Key Vault / Secrets Manager, user-secrets in dev, never commit</td></tr>
+      <tr><td><strong>Sensitive data</strong></td><td>Plaintext at rest/in transit</td><td>TLS everywhere, hash passwords (ASP.NET Identity / PBKDF2), encrypt PII</td></tr>
+    </tbody>
+  </table>
+
+  <span class="code-label cl-bad">SQL injection — string interpolation into raw SQL</span>
+  <div class="code"><span class="kw">var</span> users = _context.Users
+    .<span class="bad">FromSqlRaw</span>($<span class="st">"SELECT * FROM Users WHERE Name = '{name}'"</span>); <span class="bad">// 🚨 injectable</span></div>
+
+  <span class="code-label cl-good">Safe — parameterized</span>
+  <div class="code"><span class="kw">var</span> users = _context.Users
+    .<span class="good">FromSqlInterpolated</span>($<span class="st">"SELECT * FROM Users WHERE Name = {name}"</span>); <span class="cmt">// param @p0</span>
+<span class="cmt">// or just stay in LINQ:</span>
+<span class="kw">var</span> users2 = _context.Users.<span class="good">Where</span>(u =&gt; u.Name == name);</div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🔐</div>
+    <div class="callout-body">
+      <strong>Defence in depth:</strong> validate &amp; whitelist input at the boundary, authenticate with
+      short-lived tokens (JWT) + refresh, authorize on the server for every action, rate-limit &amp; throttle,
+      log security events, keep dependencies patched (scan with <code>dotnet list package --vulnerable</code>),
+      and follow least privilege for both code and infrastructure.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 15 — TESTING ══════════════ -->
+<div class="section" id="testing">
+  <div class="sec-eyebrow">Topic 15</div>
+  <div class="sec-title">Testing — Unit, Integration &amp; the Right Boundaries</div>
+  <div class="sec-sub">Seniors are expected to make code testable by design and to know what to mock vs what to test for real.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Unit tests</h4>
+      <ul>
+        <li>Test one class/method in isolation; mock its dependencies (Moq/NSubstitute)</li>
+        <li>Fast, deterministic, run on every build</li>
+        <li>Arrange → Act → Assert; one logical assertion per test</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Integration tests</h4>
+      <ul>
+        <li>Test components together (DB, pipeline) via <code>WebApplicationFactory</code></li>
+        <li>Use Testcontainers / a real DB over in-memory for EF fidelity</li>
+        <li>Slower but catch wiring, SQL translation &amp; config bugs</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🎭</div>
+    <div class="callout-body">
+      <strong>Mock at boundaries, not internals.</strong> Mock external dependencies you don't own (HTTP APIs,
+      time, message buses) — inject <code>IClock</code>/<code>TimeProvider</code> instead of <code>DateTime.Now</code>.
+      Don't mock the thing under test or value objects. The <strong>EF Core in-memory provider isn't a real
+      database</strong> — it won't catch SQL/translation issues; prefer a containerized real DB for repository tests.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Testable design — inject TimeProvider, mock the dependency</span>
+  <div class="code"><span class="kw">public class</span> <span class="ty">TokenService</span>
+{
+    <span class="kw">private readonly</span> <span class="ty">TimeProvider</span> _clock;
+    <span class="kw">public</span> <span class="nm">TokenService</span>(<span class="ty">TimeProvider</span> clock) =&gt; _clock = clock;
+    <span class="kw">public bool</span> <span class="nm">IsExpired</span>(<span class="ty">Token</span> t) =&gt; t.ExpiresAt &lt; _clock.<span class="nm">GetUtcNow</span>();
+}
+
+<span class="cmt">// test — control time, no flakiness</span>
+<span class="kw">var</span> clock = <span class="kw">new</span> <span class="ty">FakeTimeProvider</span>(<span class="ty">DateTimeOffset</span>.<span class="nm">Parse</span>(<span class="st">"2026-01-01Z"</span>));
+<span class="kw">var</span> svc = <span class="kw">new</span> <span class="ty">TokenService</span>(clock);
+<span class="ty">Assert</span>.<span class="good">True</span>(svc.<span class="nm">IsExpired</span>(expiredToken));</div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🔺</div>
+    <div class="callout-body">
+      <strong>Test pyramid:</strong> many fast unit tests, fewer integration tests, very few end-to-end. Aim for
+      meaningful coverage of business logic and edge cases — not a 100% number. Tests are a design tool: hard-to-test
+      code is usually badly-coupled code.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 16 — MICROSERVICES ══════════════ -->
+<div class="section" id="microservices">
+  <div class="sec-eyebrow">Topic 16</div>
+  <div class="sec-title">Microservices &amp; Distributed Systems</div>
+  <div class="sec-sub">Microservices trade in-process simplicity for independent deployability — and inherit the hard problems of distributed systems. A senior knows the cost before reaching for them.</div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🧭</div>
+    <div class="callout-body">
+      <strong>Start with a modular monolith.</strong> Split into services only when you have a real driver:
+      independent scaling, team autonomy, or differing release cadences. Premature microservices give you a
+      <em>distributed monolith</em> — all the network pain, none of the independence.
+    </div>
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📦</div>
+      <div class="comp-name">Service boundaries</div>
+      <div class="comp-desc">Draw boundaries around <strong>business capabilities</strong> (DDD bounded contexts), not technical layers. Each service owns its data — <strong>no shared database</strong>.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚪</div>
+      <div class="comp-name">API Gateway / BFF</div>
+      <div class="comp-desc">Single entry point for routing, auth, rate-limiting, aggregation. A <strong>Backend-for-Frontend</strong> tailors responses per client (web/mobile).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔎</div>
+      <div class="comp-name">Service discovery</div>
+      <div class="comp-desc">Services find each other dynamically (DNS, Consul, Kubernetes Services) rather than hard-coded IPs, so instances can scale and move.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔭</div>
+      <div class="comp-name">Observability</div>
+      <div class="comp-desc">Distributed tracing (W3C TraceContext, OpenTelemetry), correlation IDs, centralized logs &amp; metrics — you can't debug what you can't trace across hops.</div>
+    </div>
+  </div>
+
+  <div class="qh"><small>The theorem everyone quotes</small>CAP &amp; consistency trade-offs</div>
+  <p class="lead">In the presence of a network <strong>Partition</strong> you must choose between <strong>Consistency</strong> and <strong>Availability</strong>. Networks <em>do</em> partition, so the real choice is CP vs AP.</p>
+  <table class="styled-table">
+    <thead><tr><th>Choice</th><th>Behaviour on partition</th><th>Example fit</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CP</strong> (consistency)</td><td>Reject/limit requests to avoid stale data</td><td>Payments, ledgers, inventory decrement</td></tr>
+      <tr><td><strong>AP</strong> (availability)</td><td>Keep serving, reconcile later (eventual)</td><td>Feeds, catalogs, recommendations, carts</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-blue">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">
+      <strong>PACELC extends CAP:</strong> even when there's no partition (E), you trade <strong>L</strong>atency vs
+      <strong>C</strong>onsistency. Strong consistency costs round-trips/coordination; eventual consistency buys
+      speed. Pick per use-case, not globally.
+    </div>
+  </div>
+
+  <div class="qh"><small>Sync vs async</small>How services communicate</div>
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>Synchronous (HTTP/gRPC)</h4>
+      <ul>
+        <li>Simple request/response, immediate result</li>
+        <li>Temporal coupling — caller blocks on callee being up</li>
+        <li>Failure &amp; latency cascade across the call chain</li>
+        <li>Good for queries needing a fresh answer now</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Asynchronous (messaging/events)</h4>
+      <ul>
+        <li>Producers &amp; consumers decoupled in time</li>
+        <li>Resilient — broker buffers if a consumer is down</li>
+        <li>Natural fit for workflows, fan-out, eventual consistency</li>
+        <li>Harder to reason about; needs idempotency &amp; ordering care</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🚫</div>
+    <div class="callout-body">
+      <strong>Distributed transactions (2PC) are an anti-pattern</strong> across services — they couple availability
+      and don't scale. Use the <strong>Saga pattern</strong> (a sequence of local transactions with compensating
+      actions) for cross-service consistency instead. More in the <a href="#messaging" style="color:#fda4af">messaging</a>
+      and <a href="#cqrs" style="color:#fda4af">CQRS</a> sections.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 17 — ASYNC & EVENT MESSAGING ══════════════ -->
+<div class="section" id="messaging">
+  <div class="sec-eyebrow">Topic 17</div>
+  <div class="sec-title">Asynchronous Processing &amp; Event Messaging</div>
+  <div class="sec-sub">Queues and event streams are how distributed systems stay decoupled and resilient. Know the delivery guarantees and the failure modes.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📨</div>
+      <div class="comp-name">Queue (point-to-point)</div>
+      <div class="comp-desc">One message → <strong>one</strong> consumer in a competing-consumers group. Distributes work &amp; load-levels spikes. e.g. Azure Service Bus queue, SQS, RabbitMQ.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📢</div>
+      <div class="comp-name">Topic (pub/sub)</div>
+      <div class="comp-desc">One event → <strong>many</strong> independent subscribers, each with its own copy. Enables fan-out &amp; loose coupling. e.g. Service Bus topics, SNS, Kafka topics.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📜</div>
+      <div class="comp-name">Event log / stream</div>
+      <div class="comp-desc">An append-only, replayable log (Kafka, Event Hubs). Consumers track their own <strong>offset</strong>; events are retained, not deleted on read.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">☠️</div>
+      <div class="comp-name">Dead-letter queue</div>
+      <div class="comp-desc">Where poison messages go after max retries — so one bad message can't block the queue. Always have a DLQ + a replay/inspection plan.</div>
+    </div>
+  </div>
+
+  <div class="qh"><small>The distinction seniors must nail</small>Command vs Event</div>
+  <table class="styled-table">
+    <thead><tr><th></th><th>Command</th><th>Event</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Intent</strong></td><td>"Do this" — <code>PlaceOrder</code></td><td>"This happened" — <code>OrderPlaced</code></td></tr>
+      <tr><td><strong>Direction</strong></td><td>Sent to <em>one</em> known handler</td><td>Broadcast to <em>any</em> interested subscribers</td></tr>
+      <tr><td><strong>Coupling</strong></td><td>Sender knows the receiver</td><td>Publisher doesn't know subscribers</td></tr>
+      <tr><td><strong>Tense</strong></td><td>Imperative, can be rejected</td><td>Past tense, immutable fact</td></tr>
+    </tbody>
+  </table>
+
+  <div class="qh"><small>The hard part</small>Delivery semantics &amp; idempotency</div>
+  <table class="styled-table">
+    <thead><tr><th>Guarantee</th><th>Reality</th><th>What you must do</th></tr></thead>
+    <tbody>
+      <tr><td><strong>At-most-once</strong></td><td>May lose messages</td><td>Only for non-critical telemetry</td></tr>
+      <tr><td><strong>At-least-once</strong></td><td>May deliver duplicates (the common default)</td><td>Make consumers <strong>idempotent</strong> — dedupe by message id</td></tr>
+      <tr><td><strong>Exactly-once</strong></td><td>Effectively-once via idempotency + dedup; true E1 is rare/expensive</td><td>Idempotency keys + transactional offset commits</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>The dual-write problem:</strong> saving to your DB <em>and</em> publishing to a broker in two
+      separate steps can fail in between → inconsistency. Fix with the <strong>Transactional Outbox</strong>: write
+      the event to an <code>outbox</code> table in the <em>same DB transaction</em>, then a relay publishes it
+      reliably. Consumers dedupe on the event id.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Transactional outbox — atomic state change + event</span>
+  <div class="code"><span class="kw">using var</span> tx = <span class="kw">await</span> _db.Database.<span class="nm">BeginTransactionAsync</span>(ct);
+
+_db.Orders.<span class="nm">Add</span>(order);
+_db.Outbox.<span class="good">Add</span>(<span class="kw">new</span> <span class="ty">OutboxMessage</span>          <span class="cmt">// same transaction</span>
+{
+    Type    = <span class="st">"OrderPlaced"</span>,
+    Payload = <span class="ty">JsonSerializer</span>.<span class="nm">Serialize</span>(evt),
+    Id      = <span class="ty">Guid</span>.<span class="nm">NewGuid</span>()
+});
+
+<span class="kw">await</span> _db.<span class="nm">SaveChangesAsync</span>(ct);
+<span class="kw">await</span> tx.<span class="good">CommitAsync</span>(ct);   <span class="cmt">// order + event commit together, or neither</span>
+<span class="cmt">// a background relay reads Outbox → publishes to the broker → marks sent</span></div>
+
+  <div class="qh"><small>Cross-service workflows</small>The Saga pattern</div>
+  <p class="lead">A saga splits a business transaction into <strong>local transactions</strong>, each emitting an event that triggers the next step. If a step fails, run <strong>compensating actions</strong> to undo prior steps — no global lock.</p>
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Choreography</h4>
+      <ul>
+        <li>Services react to each other's events — no central coordinator</li>
+        <li>Loosely coupled, easy to add steps</li>
+        <li>Harder to see the whole flow / debug</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Orchestration</h4>
+      <ul>
+        <li>A central orchestrator drives each step explicitly</li>
+        <li>Flow is visible &amp; testable in one place</li>
+        <li>Orchestrator can become a coupling hotspot</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🔢</div>
+    <div class="callout-body">
+      <strong>Ordering &amp; backpressure:</strong> only guarantee order where you must (partition by an entity key
+      so a given order's events stay sequential). Use <strong>prefetch limits / consumer concurrency</strong> and
+      let the broker buffer to apply backpressure rather than overwhelming a slow consumer. In .NET, MassTransit or
+      NServiceBus give you retries, DLQ, sagas, and outbox out of the box over RabbitMQ/Azure Service Bus.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 18 — DISTRIBUTED CACHING ══════════════ -->
+<div class="section" id="distcache">
+  <div class="sec-eyebrow">Topic 18</div>
+  <div class="sec-title">Distributed Caching — Redis Patterns &amp; Pitfalls</div>
+  <div class="sec-sub">An in-memory cache (<code>IMemoryCache</code>) dies with the instance and isn't shared. Scale-out needs a <strong>distributed</strong> cache (Redis) — with its own failure modes.</div>
+
+  <table class="styled-table">
+    <thead><tr><th></th><th>IMemoryCache</th><th>IDistributedCache (Redis)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Scope</strong></td><td>Per-process, per-instance</td><td>Shared across all instances</td></tr>
+      <tr><td><strong>Survives restart</strong></td><td>No</td><td>Yes (separate process/cluster)</td></tr>
+      <tr><td><strong>Speed</strong></td><td>Fastest (no serialization/network)</td><td>Fast, but network + serialize cost</td></tr>
+      <tr><td><strong>Use for</strong></td><td>Tiny hot data on one node</td><td>Shared sessions, multi-instance read cache</td></tr>
+    </tbody>
+  </table>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">↩️</div>
+      <div class="comp-name">Cache-aside</div>
+      <div class="comp-desc">App checks cache → on miss reads DB → populates cache. The default, most flexible pattern. App owns invalidation.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">✍️</div>
+      <div class="comp-name">Write-through / behind</div>
+      <div class="comp-desc"><strong>Through:</strong> write cache + DB together (consistent, slower writes). <strong>Behind:</strong> write cache now, DB async (fast, risk of loss).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">⏲️</div>
+      <div class="comp-name">TTL &amp; eviction</div>
+      <div class="comp-desc">Every key needs a TTL. When full, Redis evicts by policy (LRU/LFU). Absolute + sliding expiration balance freshness vs hit rate.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧯</div>
+      <div class="comp-name">Invalidation</div>
+      <div class="comp-desc">"There are only two hard things…" Evict/refresh on writes, key by version/tag, or publish invalidation events so all nodes drop stale entries.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🌩️</div>
+    <div class="callout-body">
+      <strong>The three killers:</strong>
+      <br>• <strong>Stampede / dog-pile</strong> — a hot key expires and thousands of requests hit the DB at once. Fix with a lock/single-flight or probabilistic early refresh.
+      <br>• <strong>Penetration</strong> — repeated misses for keys that don't exist hammer the DB. Cache a null sentinel or use a Bloom filter.
+      <br>• <strong>Avalanche</strong> — many keys expire simultaneously. Fix by jittering TTLs.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Stampede protection — single-flight with a lock</span>
+  <div class="code"><span class="kw">private readonly</span> <span class="ty">SemaphoreSlim</span> _lock = <span class="kw">new</span>(<span class="nm">1</span>, <span class="nm">1</span>);
+
+<span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">Product</span>&gt; <span class="nm">GetAsync</span>(<span class="ty">int</span> id, <span class="ty">CancellationToken</span> ct)
+{
+    <span class="kw">var</span> key = $<span class="st">"product:{id}"</span>;
+    <span class="kw">var</span> hit = <span class="kw">await</span> _cache.<span class="nm">GetStringAsync</span>(key, ct);
+    <span class="kw">if</span> (hit <span class="kw">is not null</span>) <span class="kw">return</span> <span class="nm">Deserialize</span>(hit);     <span class="cmt">// fast path</span>
+
+    <span class="kw">await</span> _lock.<span class="good">WaitAsync</span>(ct);                          <span class="cmt">// only ONE caller rebuilds</span>
+    <span class="kw">try</span>
+    {
+        hit = <span class="kw">await</span> _cache.<span class="nm">GetStringAsync</span>(key, ct);     <span class="cmt">// double-check after lock</span>
+        <span class="kw">if</span> (hit <span class="kw">is not null</span>) <span class="kw">return</span> <span class="nm">Deserialize</span>(hit);
+
+        <span class="kw">var</span> product = <span class="kw">await</span> _db.Products.<span class="nm">FindAsync</span>([id], ct);
+        <span class="kw">await</span> _cache.<span class="nm">SetStringAsync</span>(key, <span class="nm">Serialize</span>(product),
+            <span class="kw">new</span>() { AbsoluteExpirationRelativeToNow =
+                <span class="ty">TimeSpan</span>.<span class="nm">FromMinutes</span>(<span class="nm">5</span>) + <span class="nm">Jitter</span>() }, ct); <span class="cmt">// jitter avoids avalanche</span>
+        <span class="kw">return</span> product;
+    }
+    <span class="kw">finally</span> { _lock.<span class="nm">Release</span>(); }
+}</div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>Cache only what helps:</strong> read-heavy, expensive-to-compute, tolerant-of-slight-staleness data.
+      Don't cache rapidly-changing or per-user-unique data blindly. Always measure hit ratio — a low-hit cache adds
+      latency and complexity for nothing. Redis also does more than caching: distributed locks, pub/sub, rate
+      limiting, leaderboards.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 19 — DDD ══════════════ -->
+<div class="section" id="ddd">
+  <div class="sec-eyebrow">Topic 19</div>
+  <div class="sec-title">Domain-Driven Design (DDD)</div>
+  <div class="sec-sub">DDD aligns the model with the business and gives you the language to draw service boundaries. It's about taming complexity in the <em>core domain</em> — not ceremony for CRUD.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🗺️</div>
+      <div class="comp-name">Bounded Context</div>
+      <div class="comp-desc">An explicit boundary within which a model &amp; its <strong>ubiquitous language</strong> are consistent. "Customer" can mean different things in Sales vs Support — separate contexts. Often = one microservice.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧱</div>
+      <div class="comp-name">Aggregate &amp; Root</div>
+      <div class="comp-desc">A cluster of objects treated as one consistency unit. The <strong>aggregate root</strong> is the only entry point; it enforces invariants. Reference other aggregates <strong>by id</strong>, not by object.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🆔</div>
+      <div class="comp-name">Entity vs Value Object</div>
+      <div class="comp-desc"><strong>Entity</strong> has identity &amp; lifecycle (an <code>Order</code>). <strong>Value object</strong> is defined by its attributes, immutable, no id (<code>Money</code>, <code>Address</code>) — <code>record</code> fits perfectly.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📣</div>
+      <div class="comp-name">Domain Event</div>
+      <div class="comp-desc">Something meaningful that happened in the domain (<code>OrderShipped</code>). Raised by aggregates, handled in-process or published outward to integrate other contexts.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🛡️</div>
+    <div class="callout-body">
+      <strong>The aggregate is your consistency &amp; transaction boundary.</strong> One transaction should modify
+      <em>one</em> aggregate; coordinate changes across aggregates with domain events / eventual consistency. Keep
+      aggregates <strong>small</strong> — large ones cause contention and big loads.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Aggregate root protecting its invariants</span>
+  <div class="code"><span class="kw">public class</span> <span class="ty">Order</span>            <span class="cmt">// aggregate root</span>
+{
+    <span class="kw">private readonly</span> <span class="ty">List</span>&lt;<span class="ty">OrderLine</span>&gt; _lines = <span class="kw">new</span>();
+    <span class="kw">public</span> <span class="ty">IReadOnlyList</span>&lt;<span class="ty">OrderLine</span>&gt; Lines =&gt; _lines;  <span class="cmt">// no external mutation</span>
+    <span class="kw">public</span> <span class="ty">OrderStatus</span> Status { <span class="kw">get</span>; <span class="kw">private set</span>; }
+
+    <span class="kw">public void</span> <span class="good">AddLine</span>(<span class="ty">Product</span> p, <span class="ty">int</span> qty)
+    {
+        <span class="kw">if</span> (Status != <span class="ty">OrderStatus</span>.Draft)          <span class="cmt">// invariant enforced here</span>
+            <span class="kw">throw new</span> <span class="ty">DomainException</span>(<span class="st">"Cannot modify a submitted order"</span>);
+        _lines.<span class="nm">Add</span>(<span class="kw">new</span> <span class="ty">OrderLine</span>(p.Id, qty, p.Price));
+    }
+
+    <span class="kw">public void</span> <span class="good">Submit</span>()
+    {
+        <span class="kw">if</span> (_lines.Count == <span class="nm">0</span>) <span class="kw">throw new</span> <span class="ty">DomainException</span>(<span class="st">"Empty order"</span>);
+        Status = <span class="ty">OrderStatus</span>.Submitted;
+        _events.<span class="nm">Add</span>(<span class="kw">new</span> <span class="ty">OrderSubmitted</span>(Id));     <span class="cmt">// raise domain event</span>
+    }
+}</div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Don't DDD everything.</strong> Reserve tactical DDD (aggregates, value objects, domain events) for
+      the <em>complex core domain</em> where business rules live. Generic/supporting subdomains (CRUD admin, lookups)
+      are fine as plain services. The <strong>strategic</strong> tools (bounded contexts, context mapping,
+      ubiquitous language) are valuable everywhere.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 20 — CQRS & EVENT SOURCING ══════════════ -->
+<div class="section" id="cqrs">
+  <div class="sec-eyebrow">Topic 20</div>
+  <div class="sec-title">CQRS &amp; Event Sourcing</div>
+  <div class="sec-sub">CQRS separates the model that <em>changes</em> data from the model that <em>reads</em> it. Event sourcing stores the <em>history of changes</em> instead of just the current state. They're independent — use either, both, or neither.</div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">CQRS — separate write &amp; read paths</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  UI(("Client")) -->|Command| CH["Command Handler\n(validate + domain)"]
+  CH --> WDB[("Write Model\n(normalized)")]
+  WDB -->|events / projection| RDB[("Read Model\n(denormalized)")]
+  UI -->|Query| QH["Query Handler"]
+  QH --> RDB
+</pre>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Command side (writes)</h4>
+      <ul>
+        <li>Validates &amp; enforces business rules via aggregates</li>
+        <li>Normalized, consistency-focused model</li>
+        <li>Returns success/failure, not data</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Query side (reads)</h4>
+      <ul>
+        <li>Denormalized, shaped for the screen — fast reads</li>
+        <li>Can use a different store (SQL→Redis/Elastic)</li>
+        <li>Often eventually consistent with the write side</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚖️</div>
+    <div class="callout-body">
+      <strong>When CQRS earns its keep:</strong> read &amp; write loads differ wildly, complex domains where the
+      query shape ≠ the domain shape, or you need independently scalable/optimized read stores. <strong>The cost:</strong>
+      two models, sync between them, and <em>eventual consistency</em> the UI must handle. For simple CRUD it's
+      over-engineering — a shared model is fine. You can also do "lite" CQRS: separate command/query objects
+      (MediatR) over the <em>same</em> database.
+    </div>
+  </div>
+
+  <span class="code-label cl-neutral">Lite CQRS with MediatR — split command &amp; query</span>
+  <div class="code"><span class="cmt">// Command — changes state, returns no data</span>
+<span class="kw">public record</span> <span class="ty">PlaceOrder</span>(<span class="ty">int</span> CustomerId, <span class="ty">List</span>&lt;<span class="ty">LineDto</span>&gt; Lines) : <span class="ty">IRequest</span>&lt;<span class="ty">Guid</span>&gt;;
+
+<span class="kw">public class</span> <span class="ty">PlaceOrderHandler</span> : <span class="ty">IRequestHandler</span>&lt;<span class="ty">PlaceOrder</span>, <span class="ty">Guid</span>&gt;
+{
+    <span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">Guid</span>&gt; <span class="nm">Handle</span>(<span class="ty">PlaceOrder</span> cmd, <span class="ty">CancellationToken</span> ct) { ... }
+}
+
+<span class="cmt">// Query — returns a read-optimized DTO, no domain logic</span>
+<span class="kw">public record</span> <span class="ty">GetOrderSummary</span>(<span class="ty">Guid</span> Id) : <span class="ty">IRequest</span>&lt;<span class="ty">OrderSummaryVm</span>&gt;;</div>
+
+  <div class="qh"><small>Storing history, not state</small>Event Sourcing</div>
+  <p class="lead">Instead of <code>UPDATE</code>-ing a row, you append immutable <strong>events</strong> (<code>OrderPlaced</code>, <code>ItemAdded</code>, <code>OrderShipped</code>). Current state is rebuilt by <strong>replaying</strong> events. The event log is the source of truth.</p>
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>What you gain</h4>
+      <ul>
+        <li>Full audit trail &amp; time-travel (state at any point)</li>
+        <li>Natural fit for events/integration &amp; CQRS projections</li>
+        <li>No lossy updates — every change is a fact</li>
+      </ul>
+    </div>
+    <div class="panel panel-bad">
+      <h4>What it costs</h4>
+      <ul>
+        <li>Higher complexity; querying needs projections</li>
+        <li><strong>Schema/versioning</strong> of events over time is hard</li>
+        <li>Replays get slow → need <strong>snapshots</strong></li>
+        <li>Eventual consistency; steeper learning curve</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout callout-rose">
+    <div class="callout-icon">🧨</div>
+    <div class="callout-body">
+      <strong>Don't reach for event sourcing by default.</strong> It shines for audit-critical, behavior-rich
+      domains (finance, logistics, collaboration). For most apps it's accidental complexity — plain CRUD or lite
+      CQRS is the right call. CQRS does <em>not</em> require event sourcing, and vice-versa.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 21 — LARGE DATA STREAMING ══════════════ -->
+<div class="section" id="streaming">
+  <div class="sec-eyebrow">Topic 21</div>
+  <div class="sec-title">Large Data &amp; Streaming — Don't Buffer the World</div>
+  <div class="sec-sub">The cardinal rule for big data in .NET: <strong>stream it, don't load it all into memory.</strong> Buffering a million rows or a multi-GB file is how you get <code>OutOfMemoryException</code> and LOH fragmentation.</div>
+
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>Buffering (dangerous at scale)</h4>
+      <ul>
+        <li><code>ToList()</code> on a huge query → all rows in RAM</li>
+        <li><code>ReadAllBytes</code> on a big file</li>
+        <li>Materializing before transforming/writing</li>
+        <li>Memory grows with data size → OOM, GC pauses</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Streaming (constant memory)</h4>
+      <ul>
+        <li><code>IAsyncEnumerable&lt;T&gt;</code> + <code>await foreach</code></li>
+        <li><code>Stream</code> pipelines, <code>PipeReader</code>/<code>PipeWriter</code></li>
+        <li>Process &amp; release each item/chunk as it arrives</li>
+        <li>Memory stays flat regardless of total size</li>
+      </ul>
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">Buffers everything — OOM risk on large tables</span>
+  <div class="code"><span class="kw">var</span> all = <span class="kw">await</span> _db.Events.<span class="bad">ToListAsync</span>();   <span class="cmt">// millions of rows in memory</span>
+<span class="kw">foreach</span> (<span class="kw">var</span> e <span class="kw">in</span> all) <span class="nm">Export</span>(e);</div>
+
+  <span class="code-label cl-good">Streams row-by-row — flat memory</span>
+  <div class="code"><span class="kw">await foreach</span> (<span class="kw">var</span> e <span class="kw">in</span> _db.Events
+    .<span class="nm">AsNoTracking</span>()
+    .<span class="good">AsAsyncEnumerable</span>().<span class="nm">WithCancellation</span>(ct))   <span class="cmt">// one row at a time</span>
+{
+    <span class="kw">await</span> <span class="nm">ExportAsync</span>(e);                            <span class="cmt">// processed &amp; released</span>
+}</div>
+
+  <div class="qh"><small>Producer/consumer in-process</small>System.Threading.Channels</div>
+  <p class="lead"><code>Channel&lt;T&gt;</code> is the modern .NET primitive for async producer/consumer pipelines with <strong>built-in backpressure</strong> — a bounded channel makes fast producers wait when consumers fall behind.</p>
+  <span class="code-label cl-good">Bounded channel — backpressure between producer &amp; consumer</span>
+  <div class="code"><span class="kw">var</span> channel = <span class="ty">Channel</span>.<span class="good">CreateBounded</span>&lt;<span class="ty">Record</span>&gt;(<span class="nm">1000</span>); <span class="cmt">// cap = backpressure</span>
+
+<span class="cmt">// Producer</span>
+_ = <span class="ty">Task</span>.<span class="nm">Run</span>(<span class="kw">async</span> () =&gt;
+{
+    <span class="kw">await foreach</span> (<span class="kw">var</span> r <span class="kw">in</span> <span class="nm">ReadSourceAsync</span>(ct))
+        <span class="kw">await</span> channel.Writer.<span class="good">WriteAsync</span>(r, ct); <span class="cmt">// blocks when full</span>
+    channel.Writer.<span class="nm">Complete</span>();
+});
+
+<span class="cmt">// Consumer(s)</span>
+<span class="kw">await foreach</span> (<span class="kw">var</span> r <span class="kw">in</span> channel.Reader.<span class="nm">ReadAllAsync</span>(ct))
+    <span class="kw">await</span> <span class="nm">ProcessAsync</span>(r);</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🌊</div>
+      <div class="comp-name">Batch vs Stream</div>
+      <div class="comp-desc"><strong>Batch:</strong> bounded data, run periodically (ETL, reports). <strong>Stream:</strong> unbounded, continuous, low-latency (Kafka, Event Hubs, Flink). Pick by latency &amp; data boundedness.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🚰</div>
+      <div class="comp-name">Backpressure</div>
+      <div class="comp-desc">When consumers can't keep up: bound buffers, throttle producers, or shed/sample load. Never let an unbounded queue grow until OOM.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧱</div>
+      <div class="comp-name">Chunking &amp; paging</div>
+      <div class="comp-desc">Process big sources in chunks/keyset pages. For files, read fixed-size buffers; for DBs, paginate by an indexed key, not <code>OFFSET</code> on huge tables.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔀</div>
+      <div class="comp-name">Parallel pipelines</div>
+      <div class="comp-desc"><code>Parallel.ForEachAsync</code> or TPL Dataflow for bounded-concurrency CPU/IO stages with throttling &amp; ordering control.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">📡</div>
+    <div class="callout-body">
+      <strong>End-to-end streaming:</strong> stream from the DB (<code>AsAsyncEnumerable</code>), keep it lazy
+      through transforms (<code>yield return</code>), and stream to the client (<code>IAsyncEnumerable</code> from a
+      minimal API / gRPC server streaming, or write directly to the <code>Response.Body</code>). Bytes flow through
+      with bounded memory the whole way. Compress (gzip/brotli) and use server streaming for very large responses.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
 <!-- ══════════════════════════════════════════
      INTERVIEW Q&A
 ══════════════════════════════════════════ -->
@@ -796,6 +1915,39 @@ flowchart TB
     <div class="callout-body">
       <strong>Exception:</strong> very small files (&lt; a few KB, e.g. tiny thumbnails) or when strict transactional
       consistency with the row is mandatory — then storing in the DB can be justified. Otherwise: blob + metadata row.
+    </div>
+  </div>
+
+  <!-- Rapid-fire senior Q&A -->
+  <div class="qh"><small>Rapid Fire</small>Short senior-level answers across the board</div>
+  <p class="lead">The quick-hit questions interviewers use to probe depth. One crisp distinction each.</p>
+
+  <table class="styled-table">
+    <thead><tr><th>Question</th><th>Sharp answer</th></tr></thead>
+    <tbody>
+      <tr><td><code>const</code> vs <code>readonly</code></td><td><code>const</code> is compile-time, baked into callers (versioning hazard across assemblies). <code>readonly</code> is set at runtime in the constructor — use it for values that depend on construction.</td></tr>
+      <tr><td><code>==</code> vs <code>.Equals()</code></td><td>For reference types <code>==</code> is identity by default; <code>.Equals()</code> can be overridden for value semantics. <code>string</code> overloads both to compare content. Records give value equality for free.</td></tr>
+      <tr><td><code>Task</code> vs <code>ValueTask</code></td><td>Use <code>ValueTask</code> for hot paths that <em>often complete synchronously</em> (avoids an allocation). Never await a <code>ValueTask</code> twice or store it — it's single-consumption.</td></tr>
+      <tr><td><code>ConfigureAwait(false)</code></td><td>In library code, skip capturing the <code>SynchronizationContext</code> to avoid deadlocks and reduce overhead. Not needed in ASP.NET Core (no context), still good practice in shared libraries.</td></tr>
+      <tr><td><code>IEnumerable</code> vs <code>ICollection</code> vs <code>IList</code></td><td>Increasing capability: <code>IEnumerable</code> (iterate) → <code>ICollection</code> (count/add/remove) → <code>IList</code> (indexed). Expose the narrowest one a caller needs.</td></tr>
+      <tr><td><code>first</code> vs <code>FirstOrDefault</code></td><td><code>First</code> throws if empty; <code>FirstOrDefault</code> returns the default. <code>Single</code> additionally asserts exactly one — use it to encode an invariant.</td></tr>
+      <tr><td><code>yield return</code></td><td>Builds a lazy iterator (state machine) — items are produced on demand, enabling streaming and infinite sequences without buffering.</td></tr>
+      <tr><td>Covariance / contravariance</td><td><code>out T</code> (covariant, <code>IEnumerable&lt;out T&gt;</code>) lets you use a more-derived type; <code>in T</code> (contravariant, <code>IComparer&lt;in T&gt;</code>) a less-derived one.</td></tr>
+      <tr><td><code>Dispose</code> vs finalizer</td><td><code>Dispose</code> is deterministic cleanup you call (via <code>using</code>); a finalizer is a non-deterministic GC safety net. Implement the pattern + <code>SuppressFinalize</code>.</td></tr>
+      <tr><td>Delegate vs event</td><td>An <code>event</code> is a delegate with restricted access — subscribers can only <code>+=</code>/<code>-=</code>, not invoke or overwrite the list. Prefer events (or <code>Action</code>/<code>Func</code>) for the publisher/subscriber boundary.</td></tr>
+      <tr><td>Closures capture</td><td>Lambdas capture <em>variables</em>, not values. Capturing a loop variable (pre-C# 5 <code>for</code>, or a shared variable) is a classic bug; capture a local copy.</td></tr>
+      <tr><td>Managed vs unmanaged</td><td>Managed resources are handled by the GC; unmanaged (file handles, sockets, native memory) must be released explicitly via <code>IDisposable</code>.</td></tr>
+      <tr><td><code>throw</code> vs <code>throw ex</code></td><td><code>throw;</code> preserves the original stack trace; <code>throw ex;</code> resets it — almost always wrong.</td></tr>
+      <tr><td>Stateless vs stateful services</td><td>Prefer stateless services (scale horizontally, no sticky sessions). Externalize state to a DB/cache/Redis so any instance can serve any request.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">🎓</div>
+    <div class="callout-body">
+      <strong>What interviewers actually score:</strong> not whether you memorized definitions, but whether you can
+      name the <em>trade-off</em>, give a <em>concrete .NET example</em>, and say <em>when you'd choose otherwise</em>.
+      Lead every answer with the decision, then the reasoning.
     </div>
   </div>
 </div>
@@ -1083,7 +2235,13 @@ flowchart TB
 
 <footer>
   .NET Senior Engineering Guide &nbsp;·&nbsp; Concepts, Interview Q&amp;A &amp; Real Debugging &nbsp;·&nbsp;
-  <a href="index.html">← Back to AI Architecture Guide</a>
+  <a href="index.html">← AI Architecture Guide</a> &nbsp;·&nbsp;
+  <a href="system-design-concepts.html">System Design</a> &nbsp;·&nbsp;
+  <a href="clean-code-design-patterns.html">Clean Code</a> &nbsp;·&nbsp;
+  <a href="data-structures-algorithms.html">DSA</a> &nbsp;·&nbsp;
+  <a href="devops-cicd-cloud.html">DevOps</a> &nbsp;·&nbsp;
+  <a href="api-design.html">API Design</a> &nbsp;·&nbsp;
+  <a href="database-deep-dive.html">Databases</a>
 </footer>
 
 <script>
