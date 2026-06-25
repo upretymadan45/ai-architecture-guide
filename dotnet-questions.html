@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>.NET Senior Engineer — Concepts, Q&amp;A &amp; Debugging Guide</title>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'neutral',
+      themeVariables: {
+        primaryColor: '#dbeafe',
+        primaryTextColor: '#1e293b',
+        primaryBorderColor: '#93c5fd',
+        lineColor: '#64748b',
+        secondaryColor: '#ede9fe',
+        tertiaryColor: '#f0fdf4',
+        fontSize: '14px'
+      }
+    });
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #050d1a;
+      --bg-card:   #0d1f38;
+      --border:    rgba(59,130,246,.15);
+      --border-h:  rgba(59,130,246,.40);
+      --blue:      #3b82f6;
+      --blue-l:    #60a5fa;
+      --purple:    #8b5cf6;
+      --purple-l:  #a78bfa;
+      --cyan:      #06b6d4;
+      --emerald:   #10b981;
+      --amber:     #f59e0b;
+      --rose:      #f43f5e;
+      --t1:        #f1f5f9;
+      --t2:        #94a3b8;
+      --t3:        #64748b;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--t1);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 15% 0%,  rgba(59,130,246,.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 100%, rgba(139,92,246,.09) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      padding: 90px 48px 64px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(59,130,246,.07), rgba(139,92,246,.07));
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(139,92,246,.13);
+      border: 1px solid rgba(139,92,246,.3);
+      color: var(--purple-l);
+      padding: 6px 18px; border-radius: 100px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    .hero-badge span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 8px var(--purple);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 800; line-height: 1.12;
+      background: linear-gradient(135deg, #fff 25%, var(--blue-l) 60%, var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 20px;
+    }
+    .hero p { font-size: 1.1rem; color: var(--t2); max-width: 720px; margin: 0 auto 40px; }
+
+    /* NAV */
+    .nav {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+      padding: 0 40px 44px; position: relative; z-index: 1;
+    }
+    .nav a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: 100px;
+      border: 1px solid var(--border); background: rgba(13,31,56,.5);
+      color: var(--t2); text-decoration: none;
+      font-size: 13px; font-weight: 500; backdrop-filter: blur(8px);
+      transition: all .25s;
+    }
+    .nav a:hover {
+      border-color: var(--border-h); color: var(--t1);
+      background: rgba(59,130,246,.1); transform: translateY(-2px);
+    }
+    .nav a .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* CONTAINER */
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 40px 96px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 84px; scroll-margin-top: 80px; }
+    .sec-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 8px; }
+    .sec-title { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; color: var(--t1); margin-bottom: 10px; }
+    .sec-sub { font-size: 1rem; color: var(--t2); max-width: 760px; margin-bottom: 32px; }
+
+    /* SUB-HEADING */
+    .qh {
+      font-size: 1.15rem; font-weight: 700; color: var(--t1);
+      margin: 36px 0 14px; padding-left: 14px; border-left: 3px solid var(--blue);
+      line-height: 1.4;
+    }
+    .qh small { display: block; font-size: 12px; font-weight: 600; color: var(--blue-l); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+
+    .lead { font-size: 14.5px; color: var(--t2); margin-bottom: 16px; }
+    .lead strong { color: var(--t1); }
+
+    /* CARD GRID */
+    .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin-bottom: 30px; }
+    .comp-card { background: rgba(59,130,246,.04); border: 1px solid var(--border); border-radius: 14px; padding: 20px; transition: all .25s; }
+    .comp-card:hover { background: rgba(59,130,246,.09); border-color: var(--border-h); transform: translateY(-3px); }
+    .comp-icon { font-size: 1.7rem; margin-bottom: 10px; }
+    .comp-name { font-size: 13.5px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+    .comp-desc { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+    .comp-desc code { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+
+    /* CODE BLOCK */
+    .code {
+      background: #0a1424;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin: 16px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 13px; line-height: 1.7;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    .code .cmt { color: #64748b; font-style: italic; }
+    .code .kw  { color: #c4b5fd; }
+    .code .ty  { color: #67e8f9; }
+    .code .st  { color: #6ee7b7; }
+    .code .nm  { color: #fcd34d; }
+    .code .bad { color: #fda4af; }
+    .code .good{ color: #6ee7b7; }
+    .code-label {
+      display: inline-block; font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 6px; margin-bottom: -6px;
+    }
+    .cl-bad  { background: rgba(244,63,94,.12); color: #fda4af; border: 1px solid rgba(244,63,94,.3); }
+    .cl-good { background: rgba(16,185,129,.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,.3); }
+    .cl-neutral { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+
+    /* INLINE CODE */
+    p code, li code, td code, .lead code, .step-txt code {
+      font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+      background: rgba(59,130,246,.10); color: #93c5fd;
+      padding: 1px 6px; border-radius: 5px;
+    }
+
+    /* CALLOUT */
+    .callout { padding: 18px 22px; border-radius: 12px; margin: 16px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .callout-blue  { background: rgba(59,130,246,.08); border-left: 3px solid var(--blue); }
+    .callout-green { background: rgba(16,185,129,.08); border-left: 3px solid var(--emerald); }
+    .callout-amber { background: rgba(245,158,11,.08); border-left: 3px solid var(--amber); }
+    .callout-purple{ background: rgba(139,92,246,.08); border-left: 3px solid var(--purple); }
+    .callout-rose  { background: rgba(244,63,94,.08);  border-left: 3px solid var(--rose); }
+    .callout-icon  { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .callout-body  { font-size: 13.5px; color: var(--t2); line-height: 1.65; }
+    .callout-body strong { color: var(--t1); }
+    .callout-body code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: rgba(255,255,255,.06); color: #93c5fd; padding: 1px 6px; border-radius: 5px; }
+
+    /* TABLE */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .styled-table th {
+      background: rgba(59,130,246,.12); color: var(--blue-l);
+      font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      padding: 12px 16px; text-align: left; border-bottom: 1px solid rgba(59,130,246,.25);
+    }
+    .styled-table td { padding: 11px 16px; font-size: 13px; color: var(--t2); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .styled-table tr:hover td { background: rgba(59,130,246,.04); }
+    .styled-table td code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(59,130,246,.10); color: #93c5fd; padding: 1px 5px; border-radius: 4px; }
+
+    /* STEPS */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin: 18px 0; }
+    .step { display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; }
+    .step-n { min-width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .step-txt { font-size: 13.5px; color: var(--t2); line-height: 1.6; }
+    .step-txt strong { color: var(--t1); }
+
+    /* TWO COL */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 18px 0; }
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 20px; border: 1px solid var(--border); }
+    .panel h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; letter-spacing: .04em; }
+    .panel ul { list-style: none; }
+    .panel ul li { font-size: 13px; color: var(--t2); padding: 5px 0 5px 20px; position: relative; line-height: 1.55; }
+    .panel ul li::before { position: absolute; left: 0; }
+    .panel-bad { background: rgba(244,63,94,.05); border-color: rgba(244,63,94,.25); }
+    .panel-bad h4 { color: #fda4af; }
+    .panel-bad ul li::before { content: '✕'; color: var(--rose); }
+    .panel-good { background: rgba(16,185,129,.05); border-color: rgba(16,185,129,.25); }
+    .panel-good h4 { color: #6ee7b7; }
+    .panel-good ul li::before { content: '✓'; color: var(--emerald); }
+
+    /* DIAGRAM */
+    .diagram-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin: 20px 0; }
+    .diagram-lbl { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); margin-bottom: 14px; }
+    .diagram-box { background: #ffffff; border-radius: 10px; padding: 24px; overflow-x: auto; }
+
+    /* TAGS */
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+    .tag { padding: 5px 13px; border-radius: 100px; font-size: 12px; font-weight: 500; border: 1px solid; }
+    .t-blue   { background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.3); color: #93c5fd; }
+    .t-purple { background: rgba(139,92,246,.10); border-color: rgba(139,92,246,.3); color: #c4b5fd; }
+    .t-cyan   { background: rgba(6,182,212,.10);  border-color: rgba(6,182,212,.3);  color: #67e8f9; }
+    .t-green  { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.3); color: #6ee7b7; }
+    .t-amber  { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.3); color: #fcd34d; }
+    .t-rose   { background: rgba(244,63,94,.10);  border-color: rgba(244,63,94,.3);  color: #fda4af; }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 56px 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 40px; border-top: 1px solid var(--border); color: var(--t3); font-size: 13px; }
+    footer a { color: var(--blue-l); text-decoration: none; }
+
+    /* BACK TO TOP */
+    .btt { position: fixed; bottom: 28px; right: 28px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; cursor: pointer; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 20px rgba(59,130,246,.4); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+    .btt.visible { opacity: 1; pointer-events: auto; }
+    .btt:hover { transform: translateY(-3px); }
+
+    @media (max-width: 768px) {
+      .hero, .wrap, .nav { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="btt" id="btt" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge"><span></span> .NET Senior Engineering Guide</div>
+  <h1>.NET Deep Dive — Concepts,<br>Interview Q&amp;A &amp; Real Debugging</h1>
+  <p>
+    A practical, senior-level reference covering async &amp; threading, EF Core query behavior, dependency
+    injection, cloud networking &amp; storage — followed by sharp answers to common interview questions and a
+    full root-cause fix for a broken order-listing page.
+  </p>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <a href="#async">       <span class="dot" style="background:#3b82f6"></span> Async &amp; Threading</a>
+  <a href="#enumerables"> <span class="dot" style="background:#8b5cf6"></span> IEnumerable / IQueryable</a>
+  <a href="#di">          <span class="dot" style="background:#06b6d4"></span> DI Lifetimes</a>
+  <a href="#efcore">      <span class="dot" style="background:#10b981"></span> EF Core &amp; N+1</a>
+  <a href="#cloud">       <span class="dot" style="background:#f59e0b"></span> Cloud Networking</a>
+  <a href="#storage">     <span class="dot" style="background:#f43f5e"></span> Storage Choices</a>
+  <a href="#qa">          <span class="dot" style="background:#a78bfa"></span> Interview Q&amp;A</a>
+  <a href="#ops">         <span class="dot" style="background:#06b6d4"></span> Production Ops</a>
+  <a href="#task">        <span class="dot" style="background:#10b981"></span> Bug Fix Task</a>
+</div>
+
+<div class="wrap">
+
+<!-- ══════════════ TOPIC 01 — ASYNC & THREADING ══════════════ -->
+<div class="section" id="async">
+  <div class="sec-eyebrow">Topic 01</div>
+  <div class="sec-title">async / await, Task, Threading &amp; Cancellation</div>
+  <div class="sec-sub">
+    Asynchrony is about <em>not blocking a thread while waiting</em> (mostly I/O). Parallelism is about
+    <em>using more threads to do more CPU work</em>. They are different problems — don't confuse them.
+  </div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">⏳</div>
+      <div class="comp-name">async / await</div>
+      <div class="comp-desc">Syntactic sugar over a state machine. <code>await</code> releases the current thread back to the pool until the awaited operation completes, then resumes. Ideal for I/O (DB, HTTP, files).</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📦</div>
+      <div class="comp-name">Task / Task&lt;T&gt;</div>
+      <div class="comp-desc">A promise of future work/result. It is <em>not</em> a thread — it's a unit of work that may run on a pool thread, inline, or just represent an I/O completion.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧵</div>
+      <div class="comp-name">Thread</div>
+      <div class="comp-desc">An OS-level execution unit (~1MB stack). Expensive to create. You rarely create raw threads today — the thread pool + <code>Task</code> manage them for you.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛑</div>
+      <div class="comp-name">CancellationToken</div>
+      <div class="comp-desc">Cooperative cancellation. A <code>CancellationTokenSource</code> signals; the token is passed down and checked via <code>ThrowIfCancellationRequested()</code> or honored by async APIs.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">💡</div>
+    <div class="callout-body">
+      <strong>Mental model:</strong> Threads are waiters in a restaurant; Tasks are orders. With <code>async/await</code>,
+      a waiter who places an order in the kitchen (I/O) doesn't stand and wait — they serve other tables and come
+      back when the food (result) is ready. That's why a few threads can serve thousands of concurrent requests.
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Cancellation done right — flow the token all the way down</span>
+  <div class="code"><span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">IActionResult</span>&gt; <span class="nm">GetReport</span>(<span class="ty">CancellationToken</span> ct)
+{
+    <span class="cmt">// ASP.NET Core injects ct tied to the client connection.</span>
+    <span class="cmt">// If the user closes the tab, ct is cancelled and work stops.</span>
+    <span class="kw">var</span> data = <span class="kw">await</span> _repo.<span class="nm">GetSalesAsync</span>(ct);   <span class="cmt">// passed to EF Core</span>
+    <span class="kw">return</span> <span class="nm">Ok</span>(data);
+}
+
+<span class="cmt">// Manual cancellation source (e.g. timeout):</span>
+<span class="kw">using var</span> cts = <span class="kw">new</span> <span class="ty">CancellationTokenSource</span>(<span class="ty">TimeSpan</span>.<span class="nm">FromSeconds</span>(<span class="nm">5</span>));
+<span class="kw">await</span> httpClient.<span class="nm">GetAsync</span>(url, cts.Token);</div>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>Common pitfalls:</strong> blocking on async with <code>.Result</code> / <code>.Wait()</code> (deadlocks
+      &amp; thread-pool starvation), forgetting to pass <code>CancellationToken</code> downstream, and using
+      <code>Task.Run</code> to "make code async" on the server — it just steals a pool thread, it doesn't add concurrency.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 02 — ENUMERABLES ══════════════ -->
+<div class="section" id="enumerables">
+  <div class="sec-eyebrow">Topic 02</div>
+  <div class="sec-title">IEnumerable vs IQueryable vs IAsyncEnumerable</div>
+  <div class="sec-sub">The single most important distinction: <strong>where</strong> does the work execute, and <strong>when</strong> is it materialized?</div>
+
+  <table class="styled-table">
+    <thead>
+      <tr><th>Aspect</th><th>IEnumerable&lt;T&gt;</th><th>IQueryable&lt;T&gt;</th><th>IAsyncEnumerable&lt;T&gt;</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Executes where</strong></td>
+        <td>In-memory (client / your app)</td>
+        <td>Translated to the data source (SQL on the DB server)</td>
+        <td>In-memory or DB, streamed asynchronously</td>
+      </tr>
+      <tr>
+        <td><strong>Filtering</strong></td>
+        <td>LINQ-to-Objects — pulls all rows, filters in RAM</td>
+        <td>LINQ-to-Entities — builds an expression tree → <code>WHERE</code> in SQL</td>
+        <td>Streams items one-by-one with <code>await foreach</code></td>
+      </tr>
+      <tr>
+        <td><strong>Best for</strong></td>
+        <td>Collections already in memory</td>
+        <td>Database queries you want pushed server-side</td>
+        <td>Large/continuous result sets without buffering all in memory</td>
+      </tr>
+      <tr>
+        <td><strong>Risk</strong></td>
+        <td>Over-fetching if used too early on a DB query</td>
+        <td>Calling unsupported methods → translation error</td>
+        <td>Holding the DB connection open while you stream</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <span class="code-label cl-bad">DANGER — switches to in-memory too early</span>
+  <div class="code">_context.Orders
+    .<span class="bad">AsEnumerable()</span>                 <span class="cmt">// ← pulls EVERY order into memory NOW</span>
+    .<span class="nm">Where</span>(o =&gt; o.CustomerId == id)  <span class="cmt">// filtered in RAM, not in SQL</span>
+    .<span class="nm">ToList</span>();</div>
+
+  <span class="code-label cl-good">CORRECT — stays as IQueryable, filters in SQL</span>
+  <div class="code">_context.Orders
+    .<span class="good">Where</span>(o =&gt; o.CustomerId == id)  <span class="cmt">// → WHERE CustomerId = @id in SQL</span>
+    .<span class="nm">ToListAsync</span>();                 <span class="cmt">// only matching rows leave the DB</span></div>
+
+  <span class="code-label cl-neutral">IAsyncEnumerable — stream without buffering everything</span>
+  <div class="code"><span class="kw">await foreach</span> (<span class="kw">var</span> order <span class="kw">in</span> _context.Orders.<span class="nm">AsAsyncEnumerable</span>())
+{
+    <span class="nm">Process</span>(order); <span class="cmt">// each row processed as it arrives</span>
+}</div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 03 — DI LIFETIMES ══════════════ -->
+<div class="section" id="di">
+  <div class="sec-eyebrow">Topic 03</div>
+  <div class="sec-title">Dependency Injection Lifetimes</div>
+  <div class="sec-sub">Pick the wrong lifetime and you get either captive dependencies, shared mutable state, or wasted allocations.</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🔂</div>
+      <div class="comp-name">Transient</div>
+      <div class="comp-desc">A <strong>new instance every time</strong> it is requested. Use for lightweight, stateless services. Safe but can allocate a lot.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🔄</div>
+      <div class="comp-name">Scoped</div>
+      <div class="comp-desc"><strong>One instance per request/scope</strong> (per HTTP request in ASP.NET Core). The default for <code>DbContext</code> and most app services.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">♾️</div>
+      <div class="comp-name">Singleton</div>
+      <div class="comp-desc"><strong>One instance for the whole app lifetime</strong>. Great for config, caches, HttpClientFactory. Must be thread-safe.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🚫</div>
+    <div class="callout-body">
+      <strong>The captive dependency trap:</strong> injecting a <em>Scoped</em> (or Transient) service into a
+      <em>Singleton</em> captures it forever — the scoped service never gets disposed/refreshed, and a
+      per-request <code>DbContext</code> ends up shared across all requests (not thread-safe → data corruption,
+      <code>ObjectDisposedException</code>). See the full fix in the <a href="#qa-scoped-singleton" style="color:#fda4af">Q&amp;A section</a>.
+    </div>
+  </div>
+
+  <table class="styled-table">
+    <thead><tr><th>Consumer ↓ / Dependency →</th><th>Transient</th><th>Scoped</th><th>Singleton</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Transient</strong></td><td>✅ OK</td><td>✅ OK</td><td>✅ OK</td></tr>
+      <tr><td><strong>Scoped</strong></td><td>✅ OK</td><td>✅ OK</td><td>✅ OK</td></tr>
+      <tr><td><strong>Singleton</strong></td><td>⚠️ Captive</td><td>❌ Invalid</td><td>✅ OK</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 04 — EF CORE ══════════════ -->
+<div class="section" id="efcore">
+  <div class="sec-eyebrow">Topic 04</div>
+  <div class="sec-title">EF Core — Tracking, Include, Lazy Loading &amp; the N+1 Problem</div>
+  <div class="sec-sub">Most "the app is slow" tickets in a .NET shop trace back to one of these four things.</div>
+
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Tracking (default)</h4>
+      <ul>
+        <li>EF keeps a snapshot of every entity in the change tracker</li>
+        <li>Required when you intend to <code>Update</code> / <code>SaveChanges</code></li>
+        <li>Costs memory + CPU for the snapshot</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>AsNoTracking()</h4>
+      <ul>
+        <li>No snapshot — read-only, faster, less memory</li>
+        <li>Perfect for GET / listing / reporting queries</li>
+        <li>Changes won't be persisted (by design)</li>
+      </ul>
+    </div>
+  </div>
+
+  <span class="code-label cl-good">Read-only listing → AsNoTracking</span>
+  <div class="code"><span class="kw">var</span> customers = <span class="kw">await</span> _context.Customers
+    .<span class="good">AsNoTracking</span>()
+    .<span class="nm">ToListAsync</span>();</div>
+
+  <div class="qh"><small>The classic killer</small>The N+1 Query Problem</div>
+  <p class="lead">You run <strong>1 query</strong> to load a list, then <strong>N more queries</strong> (one per row) to load each related entity. 1 + N round-trips to the database = a page that takes seconds.</p>
+
+  <span class="code-label cl-bad">N+1 — 1 query for customers, then 1 per customer for orders</span>
+  <div class="code"><span class="kw">var</span> customers = _context.Customers.<span class="nm">ToList</span>();      <span class="cmt">// 1 query</span>
+<span class="kw">foreach</span> (<span class="kw">var</span> c <span class="kw">in</span> customers)
+    <span class="kw">var</span> orders = c.Orders.<span class="nm">ToList</span>();           <span class="bad">// +1 query EACH → N queries</span></div>
+
+  <span class="code-label cl-good">FIXED — eager-load with Include = 1 (or 2) queries total</span>
+  <div class="code"><span class="kw">var</span> customers = <span class="kw">await</span> _context.Customers
+    .<span class="good">Include</span>(c =&gt; c.Orders)
+        .<span class="good">ThenInclude</span>(o =&gt; o.LineItems)   <span class="cmt">// load the whole graph in one go</span>
+    .<span class="nm">AsNoTracking</span>()
+    .<span class="nm">ToListAsync</span>();</div>
+
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>Lazy Loading</h4>
+      <ul>
+        <li>Related data loaded automatically on first property access</li>
+        <li>Convenient — but silently triggers N+1</li>
+        <li>Needs proxies + <code>virtual</code> navigation properties</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Eager Loading (Include)</h4>
+      <ul>
+        <li>You declare what to load up front</li>
+        <li>Predictable query count, no hidden round-trips</li>
+        <li>Preferred for web request paths</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">N+1 vs Eager Loading</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart LR
+  subgraph BAD["❌ Lazy / N+1"]
+    A1["Query: customers"] --> A2["Query: orders #1"]
+    A1 --> A3["Query: orders #2"]
+    A1 --> A4["Query: orders #N"]
+  end
+  subgraph GOOD["✅ Include"]
+    B1["Single JOIN query:\ncustomers + orders"]
+  end
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 05 — CLOUD NETWORKING ══════════════ -->
+<div class="section" id="cloud">
+  <div class="sec-eyebrow">Topic 05</div>
+  <div class="sec-title">Cloud Networking — VNet / VPC, Subnets &amp; Security Groups</div>
+  <div class="sec-sub">The minimum networking vocabulary every backend engineer should own (terms shown for AWS &amp; Azure).</div>
+
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">🌐</div>
+      <div class="comp-name">VPC / VNet</div>
+      <div class="comp-desc">Your private, isolated network in the cloud with its own IP address range (CIDR, e.g. <code>10.0.0.0/16</code>). Nothing gets in or out unless you allow it.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧩</div>
+      <div class="comp-name">Subnet</div>
+      <div class="comp-desc">A slice of the VPC's IP range. <strong>Public</strong> subnets reach the internet (via an Internet Gateway); <strong>private</strong> subnets (DBs, app servers) do not.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛡️</div>
+      <div class="comp-name">Security Group</div>
+      <div class="comp-desc"><strong>Stateful</strong> virtual firewall on the resource (VM/instance). Allow-rules only; return traffic is automatically permitted. E.g. allow 443 from anywhere, 5432 only from the app subnet.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-name">NACL (Network ACL)</div>
+      <div class="comp-desc"><strong>Stateless</strong> firewall at the <em>subnet</em> boundary. Supports allow <em>and</em> deny rules; you must define inbound and outbound separately. A coarse second layer.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">🔐</div>
+    <div class="callout-body">
+      <strong>Defence in depth, least privilege:</strong> put databases in private subnets, expose only a load
+      balancer publicly, lock Security Groups to specific ports/sources (never <code>0.0.0.0/0</code> on a DB),
+      use NACLs as a coarse subnet-level backstop, and reference security groups by ID (SG-to-SG rules) instead
+      of hard-coding IPs.
+    </div>
+  </div>
+
+  <div class="diagram-card">
+    <div class="diagram-lbl">Typical secure layout</div>
+    <div class="diagram-box">
+<pre class="mermaid">
+flowchart TB
+  Internet(("🌍 Internet")) --> IGW["Internet Gateway"]
+  IGW --> ALB["Load Balancer\n(Public Subnet)"]
+  ALB --> App["App Servers\n(Private Subnet)"]
+  App --> DB[("Database\n(Private Subnet)")]
+  subgraph VPC["VPC 10.0.0.0/16"]
+    IGW
+    subgraph Pub["Public Subnet 10.0.1.0/24"]
+      ALB
+    end
+    subgraph Priv["Private Subnet 10.0.2.0/24"]
+      App
+      DB
+    end
+  end
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════ TOPIC 06 — STORAGE ══════════════ -->
+<div class="section" id="storage">
+  <div class="sec-eyebrow">Topic 06</div>
+  <div class="sec-title">Object Storage vs Managed Databases</div>
+  <div class="sec-sub">Two different jobs: blobs of bytes vs structured, queryable, transactional data.</div>
+
+  <table class="styled-table">
+    <thead><tr><th></th><th>Object Storage (S3 / Azure Blob / GCS)</th><th>Managed Database (RDS / Azure SQL / Cloud SQL)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Stores</strong></td><td>Files: images, video, PDFs, backups, logs</td><td>Structured rows &amp; relationships</td></tr>
+      <tr><td><strong>Access</strong></td><td>Key → object, via HTTP/SDK, presigned URLs</td><td>SQL queries, transactions, joins</td></tr>
+      <tr><td><strong>Scale &amp; cost</strong></td><td>Virtually unlimited, very cheap per GB</td><td>More expensive; sized by CPU/RAM/IOPS</td></tr>
+      <tr><td><strong>Strengths</strong></td><td>Durability (11 9's), CDN-friendly, lifecycle tiers</td><td>ACID, integrity, indexing, querying</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">⭐</div>
+    <div class="callout-body">
+      <strong>Best practice:</strong> store the <em>file</em> in object storage and store only its <em>metadata
+      + URL/key</em> in the database. Never put large binaries in the DB — it bloats backups, kills cache
+      efficiency, and slows every query. (Detailed reasoning in the <a href="#qa-storage" style="color:#c4b5fd">Q&amp;A</a>.)
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     INTERVIEW Q&A
+══════════════════════════════════════════ -->
+<div class="section" id="qa">
+  <div class="sec-eyebrow">Part B</div>
+  <div class="sec-title">Interview Questions — Sharp Answers</div>
+  <div class="sec-sub">Concise, senior-level responses with the trade-offs interviewers are listening for.</div>
+
+  <!-- Q1 AsEnumerable -->
+  <div class="qh"><small>Question 1</small>If you use <code>.AsEnumerable()</code> in a repository and have other queries to run, what's the problem?</div>
+  <p class="lead">Calling <code>AsEnumerable()</code> (or <code>ToList()</code>) <strong>forces immediate execution and switches from <code>IQueryable</code> to <code>IEnumerable</code></strong>. From that point on, everything runs <strong>in memory</strong>, not in SQL.</p>
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>What breaks</h4>
+      <ul>
+        <li>The whole table is pulled into RAM before any further filtering</li>
+        <li>Later <code>Where</code>/<code>OrderBy</code>/<code>Skip</code>/<code>Take</code> no longer translate to SQL → no DB indexes used</li>
+        <li>Paging happens after fetching everything → huge over-fetch</li>
+        <li>Memory pressure &amp; GC churn; can starve the connection pool</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Do instead</h4>
+      <ul>
+        <li>Keep the chain as <code>IQueryable</code> until the very end</li>
+        <li>Compose filters, then call <code>ToListAsync()</code> once</li>
+        <li>Only materialize the rows you actually need</li>
+      </ul>
+    </div>
+  </div>
+  <span class="code-label cl-bad">Problem</span>
+  <div class="code"><span class="kw">var</span> q = _context.Orders.<span class="bad">AsEnumerable</span>();     <span class="cmt">// loads ALL orders now</span>
+<span class="kw">var</span> recent = q.<span class="nm">Where</span>(o =&gt; o.Date &gt; cutoff)       <span class="cmt">// in-memory, no index</span>
+              .<span class="nm">Take</span>(<span class="nm">20</span>);</div>
+  <span class="code-label cl-good">Fix</span>
+  <div class="code"><span class="kw">var</span> recent = <span class="kw">await</span> _context.Orders
+    .<span class="good">Where</span>(o =&gt; o.Date &gt; cutoff)   <span class="cmt">// WHERE in SQL, uses index</span>
+    .<span class="nm">OrderByDescending</span>(o =&gt; o.Date)
+    .<span class="nm">Take</span>(<span class="nm">20</span>)
+    .<span class="nm">AsNoTracking</span>()
+    .<span class="nm">ToListAsync</span>();</div>
+
+  <!-- Q2 async void -->
+  <div class="qh"><small>Question 2</small>async void vs async Task — when can you use async void, can you handle exceptions, trade-offs?</div>
+  <table class="styled-table">
+    <thead><tr><th></th><th>async Task</th><th>async void</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Awaitable</strong></td><td>✅ Yes — caller can <code>await</code></td><td>❌ No — fire and forget</td></tr>
+      <tr><td><strong>Exceptions</strong></td><td>Captured on the Task; surfaced when awaited; <code>try/catch</code> works</td><td>Thrown on the <strong>SynchronizationContext</strong> → usually crashes the process</td></tr>
+      <tr><td><strong>Composition</strong></td><td>Can be combined (<code>WhenAll</code>), tested, retried</td><td>Cannot be awaited or composed</td></tr>
+      <tr><td><strong>Use when</strong></td><td><strong>Always</strong>, by default</td><td>Only for <strong>top-level event handlers</strong> (e.g. <code>button_Click</code>)</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-rose">
+    <div class="callout-icon">💥</div>
+    <div class="callout-body">
+      <strong>Can you handle exceptions in <code>async void</code>?</strong> Only if you wrap the <em>entire body</em>
+      in <code>try/catch</code> — an unhandled exception escaping an <code>async void</code> method cannot be caught
+      by the caller and will typically <strong>crash the whole app</strong>. The trade-offs: not awaitable, hard to
+      test, exceptions are deadly. Use <code>async Task</code> everywhere except UI event handlers.
+    </div>
+  </div>
+  <span class="code-label cl-good">Acceptable async void — UI handler with full try/catch</span>
+  <div class="code"><span class="kw">private async void</span> <span class="nm">OnSave_Click</span>(<span class="ty">object</span> s, <span class="ty">EventArgs</span> e)
+{
+    <span class="kw">try</span> { <span class="kw">await</span> _service.<span class="nm">SaveAsync</span>(); }
+    <span class="kw">catch</span> (<span class="ty">Exception</span> ex) { <span class="nm">ShowError</span>(ex); } <span class="cmt">// must catch here</span>
+}</div>
+
+  <!-- Q3 Task.Run vs Thread -->
+  <div class="qh"><small>Question 3</small>Difference between <code>Task.Run(...)</code> and <code>new Thread(...)</code>?</div>
+  <table class="styled-table">
+    <thead><tr><th></th><th>Task.Run</th><th>new Thread</th></tr></thead>
+    <tbody>
+      <tr><td><strong>What it does</strong></td><td>Queues work to the <strong>thread pool</strong></td><td>Creates a <strong>dedicated OS thread</strong></td></tr>
+      <tr><td><strong>Cost</strong></td><td>Cheap — reuses pooled threads</td><td>Expensive — ~1MB stack, OS scheduling overhead</td></tr>
+      <tr><td><strong>Result / await</strong></td><td>Returns a <code>Task</code> you can await &amp; get a result</td><td>No result; must coordinate manually</td></tr>
+      <tr><td><strong>Best for</strong></td><td>Short CPU-bound work, fork/join, parallelism</td><td>Rare: long-running, dedicated, or special-priority threads</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-amber">
+    <div class="callout-icon">📌</div>
+    <div class="callout-body">
+      <strong>Rule of thumb:</strong> prefer <code>Task.Run</code> for CPU-bound work you want to offload. Use a raw
+      <code>Thread</code> only for genuinely long-lived background loops where you need full control. And remember:
+      for <em>I/O-bound</em> work you want neither — just <code>await</code> the async API, no extra thread needed.
+    </div>
+  </div>
+
+  <!-- Q4 scoped into singleton -->
+  <div class="qh" id="qa-scoped-singleton"><small>Question 4</small>What's the problem injecting Scoped services into a Singleton, and how do you fix it?</div>
+  <p class="lead"><strong>The captive dependency problem.</strong> The singleton lives for the whole app, so the scoped instance it captures also lives forever — defeating the per-request lifetime.</p>
+  <div class="two-col">
+    <div class="panel panel-bad">
+      <h4>Symptoms</h4>
+      <ul>
+        <li>A per-request <code>DbContext</code> shared across all requests</li>
+        <li><code>DbContext</code> is not thread-safe → race conditions, corrupted data</li>
+        <li><code>ObjectDisposedException</code> once the first scope ends</li>
+        <li>Stale data; the scoped service never refreshes</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Fixes</h4>
+      <ul>
+        <li>Inject <code>IServiceScopeFactory</code> and create a scope per unit of work</li>
+        <li>Or inject a factory / <code>Func&lt;T&gt;</code> instead of the service itself</li>
+        <li>Or make the consumer Scoped instead of Singleton</li>
+        <li>Enable scope validation (on by default in Development) to catch it at startup</li>
+      </ul>
+    </div>
+  </div>
+  <span class="code-label cl-good">Fix — resolve the scoped service inside an explicit scope</span>
+  <div class="code"><span class="kw">public class</span> <span class="ty">BackgroundWorker</span>            <span class="cmt">// registered as Singleton</span>
+{
+    <span class="kw">private readonly</span> <span class="ty">IServiceScopeFactory</span> _scopeFactory;
+    <span class="kw">public</span> <span class="nm">BackgroundWorker</span>(<span class="ty">IServiceScopeFactory</span> f) =&gt; _scopeFactory = f;
+
+    <span class="kw">public async</span> <span class="ty">Task</span> <span class="nm">DoWork</span>()
+    {
+        <span class="kw">using var</span> scope = _scopeFactory.<span class="nm">CreateScope</span>();
+        <span class="kw">var</span> db = scope.ServiceProvider
+                     .<span class="nm">GetRequiredService</span>&lt;<span class="ty">AppDbContext</span>&gt;(); <span class="cmt">// fresh per scope</span>
+        <span class="kw">await</span> db.<span class="nm">SaveChangesAsync</span>();
+    }
+}</div>
+
+  <!-- Q5 abstract vs interface -->
+  <div class="qh"><small>Question 5</small>Abstract class vs Interface</div>
+  <table class="styled-table">
+    <thead><tr><th>Aspect</th><th>Abstract Class</th><th>Interface</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Relationship</strong></td><td>"is-a" — shared identity/base</td><td>"can-do" — a capability/contract</td></tr>
+      <tr><td><strong>Implementation</strong></td><td>Can contain fields, state &amp; concrete methods</td><td>Contract only (default methods since C# 8, but no state)</td></tr>
+      <tr><td><strong>Inheritance</strong></td><td>Single base class only</td><td>A type can implement many interfaces</td></tr>
+      <tr><td><strong>Constructors / fields</strong></td><td>Yes</td><td>No instance fields/constructors</td></tr>
+      <tr><td><strong>Use when</strong></td><td>Shared base behavior + state across related types</td><td>Define a contract for DI, mocking, unrelated types</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-blue">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>Heuristic:</strong> "Program to an interface" — favour interfaces for contracts/DI/testability. Reach
+      for an abstract class only when concrete subtypes genuinely share state and base implementation. Often you
+      use both: an interface for the contract, an abstract base for shared plumbing.
+    </div>
+  </div>
+
+  <!-- Q8 storage -->
+  <div class="qh" id="qa-storage"><small>Question 6</small>Do you store images/files in S3/Blob or in a managed database? Which &amp; why?</div>
+  <p class="lead"><strong>Object storage (S3 / Azure Blob), not the database.</strong> Store the binary in the blob store; persist only the metadata and the key/URL in the DB.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Cost &amp; scale:</strong> object storage is far cheaper per GB and effectively unlimited; DB storage is premium.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Performance:</strong> large BLOBs bloat DB backups, hurt buffer-cache hit ratios, and slow every query/replication.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Delivery:</strong> blob stores serve via CDN and <strong>presigned URLs</strong>, offloading bandwidth from your app servers.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Durability:</strong> S3/Blob give 11 nines of durability, lifecycle tiering, and versioning out of the box.</div></div>
+  </div>
+  <div class="callout callout-green">
+    <div class="callout-icon">✅</div>
+    <div class="callout-body">
+      <strong>Exception:</strong> very small files (&lt; a few KB, e.g. tiny thumbnails) or when strict transactional
+      consistency with the row is mandatory — then storing in the DB can be justified. Otherwise: blob + metadata row.
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     PRODUCTION OPS
+══════════════════════════════════════════ -->
+<div class="section" id="ops">
+  <div class="sec-eyebrow">Part C</div>
+  <div class="sec-title">Production Operations &amp; Incident Handling</div>
+  <div class="sec-sub">How a senior engineer thinks when systems are on fire — calm, structured, evidence-driven.</div>
+
+  <!-- incident troubleshooting -->
+  <div class="qh"><small>Question 7</small>How do you approach production incident troubleshooting? (step by step)</div>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Acknowledge &amp; assess impact.</strong> Declare the incident, assign a severity, identify who/what is affected.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Stop the bleeding first.</strong> Mitigate before you diagnose — roll back, scale out, feature-flag off, or failover. Restore service, then investigate.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Gather evidence.</strong> Logs, metrics, traces, dashboards, recent deploys/config changes. Establish a timeline — "what changed?"</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Form &amp; test a hypothesis.</strong> Narrow the blast radius (which service, which dependency, which release). Reproduce if possible.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>Apply the fix</strong> (hotfix or roll forward) and verify recovery via metrics &amp; synthetic checks.</div></div>
+    <div class="step"><div class="step-n">6</div><div class="step-txt"><strong>Communicate continuously</strong> with stakeholders throughout — status, ETA, resolution.</div></div>
+    <div class="step"><div class="step-n">7</div><div class="step-txt"><strong>Blameless post-mortem.</strong> Document root cause, add monitoring/alerts/tests so it can't recur silently.</div></div>
+  </div>
+
+  <!-- rollback rollforward hotfix -->
+  <div class="qh"><small>Question 8</small>Rollback vs Roll-forward vs Hotfix — what &amp; when?</div>
+  <table class="styled-table">
+    <thead><tr><th>Strategy</th><th>What it is</th><th>When to use</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rollback</strong></td><td>Revert to the previous known-good deployment</td><td>A recent release caused the issue and the old version is safe; fastest path back to stable</td></tr>
+      <tr><td><strong>Roll-forward</strong></td><td>Fix the bug and deploy a <em>new</em> version forward</td><td>Rollback isn't possible (e.g. a DB migration already ran) or the fix is small and well understood</td></tr>
+      <tr><td><strong>Hotfix</strong></td><td>A targeted, urgent patch to production (often off a hotfix branch)</td><td>Critical bug needing an immediate surgical fix without waiting for the full release cycle</td></tr>
+    </tbody>
+  </table>
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-body">
+      <strong>Watch out:</strong> rollback is risky once <em>irreversible schema/data migrations</em> have run — then
+      roll-forward is safer. Design migrations to be backward-compatible (expand/contract pattern) so rollback stays an option.
+    </div>
+  </div>
+
+  <!-- AWS ACLs / resources / subnet / security -->
+  <div class="qh"><small>Question 9</small>What are AWS ACLs, Resources, and Subnets? How do you enforce security?</div>
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-name">Network ACL</div>
+      <div class="comp-desc"><strong>Stateless</strong> subnet-level firewall with ordered allow/deny rules for inbound &amp; outbound. A coarse perimeter layer.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🪣</div>
+      <div class="comp-name">Resource / S3 ACL &amp; Policy</div>
+      <div class="comp-desc">Permissions attached to a resource (e.g. S3 bucket policy). Modern practice: prefer IAM policies &amp; bucket policies, keep ACLs disabled / "Block Public Access" on.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🧩</div>
+      <div class="comp-name">Subnet</div>
+      <div class="comp-desc">An IP range within a VPC; public (internet-facing) or private (internal). Place sensitive resources in private subnets.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">🛡️</div>
+      <div class="comp-name">Security Group</div>
+      <div class="comp-desc"><strong>Stateful</strong> instance-level firewall, allow-rules only. Your primary control for who can reach a resource and on which ports.</div>
+    </div>
+  </div>
+  <div class="callout callout-green">
+    <div class="callout-icon">🔐</div>
+    <div class="callout-body">
+      <strong>Enforcing security (defence in depth + least privilege):</strong> IAM roles with minimal permissions
+      (no long-lived keys), private subnets for DBs, tight Security Groups (no <code>0.0.0.0/0</code> to data tiers),
+      NACLs as a backstop, encryption in transit (TLS) and at rest (KMS), secrets in a vault/Secrets Manager,
+      WAF + the principle that nothing is public unless it must be. Audit with CloudTrail/Config.
+    </div>
+  </div>
+
+  <!-- senior crash handling -->
+  <div class="qh"><small>Question 10</small>As a senior, how do you handle production crash scenarios?</div>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Stay calm &amp; lead.</strong> Coordinate the response, assign roles (comms, investigation, mitigation), avoid panicked random changes.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Restore service first.</strong> Failover, roll back, scale, restart, or shed load. Customer impact over root cause in the moment.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Use telemetry, not guesses.</strong> APM (App Insights/Datadog), structured logs, distributed traces, dumps for crashes (e.g. <code>dotnet-dump</code>).</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Correlate with change.</strong> 90% of incidents follow a deploy or config change — check the diff first.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>Communicate &amp; document</strong> throughout; run a blameless post-mortem and harden with alerts, tests, and runbooks.</div></div>
+  </div>
+  <div class="callout callout-blue">
+    <div class="callout-icon">🧰</div>
+    <div class="callout-body">
+      <strong>Prevention is part of the answer:</strong> health checks, graceful degradation &amp; circuit breakers
+      (Polly), retries with back-off, resource limits, autoscaling, canary/blue-green deploys, and proactive
+      alerting on SLOs so you find issues before customers do.
+    </div>
+  </div>
+
+  <!-- architecture + perf -->
+  <div class="qh"><small>Question 11</small>Which architecture/patterns do you use? How do you ensure performance?</div>
+  <div class="two-col">
+    <div class="panel panel-good">
+      <h4>Architecture &amp; patterns</h4>
+      <ul>
+        <li>Clean / Layered (or Hexagonal) for separation of concerns</li>
+        <li>Repository + Unit of Work where it adds value (not over-abstracted)</li>
+        <li>CQRS + MediatR for complex read/write paths</li>
+        <li>Dependency Injection everywhere; SOLID principles</li>
+        <li>Microservices only when the org &amp; domain justify it — modular monolith first</li>
+        <li>Async messaging / outbox for cross-service consistency</li>
+      </ul>
+    </div>
+    <div class="panel panel-good">
+      <h4>Performance optimizations</h4>
+      <ul>
+        <li>Fix N+1, use <code>AsNoTracking</code>, project to DTOs, index hot columns</li>
+        <li>Async I/O end-to-end; never block on async</li>
+        <li>Caching: in-memory + distributed (Redis), with sensible invalidation</li>
+        <li>Pagination &amp; server-side filtering — never return everything</li>
+        <li>Connection pooling, response compression, output caching</li>
+        <li>Measure first — profile &amp; load-test before optimizing</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="hr"></div>
+
+<!-- ══════════════════════════════════════════
+     THE BUG FIX TASK
+══════════════════════════════════════════ -->
+<div class="section" id="task">
+  <div class="sec-eyebrow">Part D — Practical Task</div>
+  <div class="sec-title">Bug Fix — Orders Showing $0 &amp; Recent Orders Missing</div>
+  <div class="sec-sub">Two reported symptoms, one piece of code. Let's find the root causes and fix them.</div>
+
+  <div class="callout callout-rose">
+    <div class="callout-icon">🐞</div>
+    <div class="callout-body">
+      <strong>Reported symptoms:</strong> (1) order total always shows <code>$0</code>, and (2) recent orders don't
+      populate for certain customers.
+    </div>
+  </div>
+
+  <span class="code-label cl-bad">Original pseudocode (as given)</span>
+  <div class="code"><span class="kw">for</span> (<span class="kw">var</span> customer <span class="kw">in</span> customers)
+{
+    customer.Orders = _context.Orders.<span class="nm">Where</span>(o =&gt; o.customerid == customer.id);
+
+    <span class="kw">for</span> (<span class="kw">var</span> order <span class="kw">in</span> customer.Orders)
+    {
+        lineitem.Amount = order.LineItems?.<span class="nm">TotalAmount</span>(x =&gt; x.<span class="nm">sum</span>(amount)) ?? <span class="nm">0</span>;
+    }
+    <span class="kw">return</span> <span class="nm">view</span>(customer);
+}</div>
+
+  <div class="qh"><small>Root cause analysis</small>What is actually wrong</div>
+
+  <table class="styled-table">
+    <thead><tr><th>#</th><th>Bug</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td><code>order.LineItems</code> is never loaded (no <code>Include</code>). With lazy loading off it's <code>null</code> → <code>?? 0</code> hits every time.</td>
+        <td><strong>Total always $0</strong></td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td>The sum is assigned to a single, outer <code>lineitem.Amount</code> variable (overwritten each loop) instead of accumulating onto the order/customer total.</td>
+        <td><strong>Total always $0 / wrong</strong></td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td><code>return view(customer)</code> is <em>inside</em> the loop → it returns after the <strong>first</strong> customer.</td>
+        <td><strong>Recent orders missing for "certain" customers</strong> (everyone after the first)</td>
+      </tr>
+      <tr>
+        <td><strong>4</strong></td>
+        <td><code>Where(...)</code> returns an un-executed <code>IQueryable</code>; assigning it to <code>customer.Orders</code> then re-querying per customer = the <strong>N+1 problem</strong>.</td>
+        <td>Slow + inconsistent results</td>
+      </tr>
+      <tr>
+        <td><strong>5</strong></td>
+        <td>No <code>OrderBy</code>/<code>Take</code> for "recent" orders, and no null/empty handling.</td>
+        <td>"Recent" not actually recent</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-amber">
+    <div class="callout-icon">🎯</div>
+    <div class="callout-body">
+      <strong>The two reported symptoms map cleanly:</strong> the <em>$0 total</em> comes from bugs #1 &amp; #2
+      (line items never loaded + overwritten variable). The <em>missing recent orders for certain customers</em>
+      comes from bug #3 (the <code>return</code> sits inside the loop, so only the first customer is ever processed).
+    </div>
+  </div>
+
+  <div class="qh"><small>The fix</small>Corrected pseudocode</div>
+  <span class="code-label cl-good">Eager-load the graph once, accumulate correctly, return after the loop</span>
+  <div class="code"><span class="cmt">// 1) Load customers + orders + line items in ONE query (no N+1).</span>
+<span class="cmt">//    AsNoTracking because this is a read-only listing page.</span>
+<span class="kw">var</span> customers = <span class="kw">await</span> _context.Customers
+    .<span class="good">Include</span>(c =&gt; c.Orders.<span class="nm">OrderByDescending</span>(o =&gt; o.Date).<span class="nm">Take</span>(<span class="nm">10</span>))
+        .<span class="good">ThenInclude</span>(o =&gt; o.LineItems)
+    .<span class="nm">AsNoTracking</span>()
+    .<span class="nm">ToListAsync</span>(ct);
+
+<span class="kw">foreach</span> (<span class="kw">var</span> customer <span class="kw">in</span> customers)
+{
+    <span class="kw">foreach</span> (<span class="kw">var</span> order <span class="kw">in</span> customer.Orders)
+    {
+        <span class="cmt">// 2) Accumulate onto THIS order, guard nulls/empties.</span>
+        order.TotalAmount = order.LineItems?.<span class="good">Sum</span>(li =&gt; li.Amount) ?? <span class="nm">0m</span>;
+    }
+}
+
+<span class="cmt">// 3) Return AFTER the loop — render ALL customers, not just the first.</span>
+<span class="kw">return</span> <span class="nm">View</span>(customers);</div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">✅</div>
+    <div class="callout-body">
+      <strong>Better still:</strong> compute the total in the database with a projection to a view-model so no
+      entity mutation is needed and even less data crosses the wire:
+    </div>
+  </div>
+  <span class="code-label cl-good">Even cleaner — project totals in SQL</span>
+  <div class="code"><span class="kw">var</span> model = <span class="kw">await</span> _context.Customers
+    .<span class="nm">Select</span>(c =&gt; <span class="kw">new</span> <span class="ty">CustomerVm</span>
+    {
+        Id    = c.Id,
+        Name  = c.Name,
+        Recent = c.Orders
+            .<span class="nm">OrderByDescending</span>(o =&gt; o.Date)
+            .<span class="nm">Take</span>(<span class="nm">10</span>)
+            .<span class="nm">Select</span>(o =&gt; <span class="kw">new</span> <span class="ty">OrderVm</span>
+            {
+                Id     = o.Id,
+                Date   = o.Date,
+                Total  = o.LineItems.<span class="good">Sum</span>(li =&gt; li.Amount) <span class="cmt">// SUM() in SQL</span>
+            }).<span class="nm">ToList</span>()
+    })
+    .<span class="nm">AsNoTracking</span>()
+    .<span class="nm">ToListAsync</span>(ct);
+
+<span class="kw">return</span> <span class="nm">View</span>(model);</div>
+
+  <!-- caching question -->
+  <div class="qh"><small>Performance follow-up</small>The customer listing page gets huge traffic — how do you make it fast? Cache?</div>
+  <p class="lead">Yes — but caching is the <em>last</em> layer, not the first. Fix the query, then add caching and other layers in order of cost/benefit.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>Fix the query first.</strong> Eliminate N+1 (<code>Include</code>/projection), <code>AsNoTracking</code>, select only needed columns into a DTO, and index <code>CustomerId</code> + <code>Order.Date</code>.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Paginate.</strong> Never return all customers — server-side paging with <code>Skip/Take</code> (or keyset pagination for big tables).</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>Cache reads.</strong> Distributed cache (<strong>Redis</strong>) for the listing payload, or <code>IMemoryCache</code> for a single instance. Use short TTLs + cache-aside pattern.</div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Invalidate smartly.</strong> Evict/refresh on writes (new order, updated customer) so the cache never goes stale; key by page + filter.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-txt"><strong>Output/response caching &amp; CDN</strong> for anonymous or rarely-changing views; ETags for conditional requests.</div></div>
+    <div class="step"><div class="step-n">6</div><div class="step-txt"><strong>Scale out</strong> behind a load balancer; consider read replicas for read-heavy reporting.</div></div>
+  </div>
+
+  <span class="code-label cl-good">Cache-aside with Redis (IDistributedCache)</span>
+  <div class="code"><span class="kw">public async</span> <span class="ty">Task</span>&lt;<span class="ty">List</span>&lt;<span class="ty">CustomerVm</span>&gt;&gt; <span class="nm">GetPageAsync</span>(<span class="ty">int</span> page, <span class="ty">CancellationToken</span> ct)
+{
+    <span class="kw">var</span> key = $<span class="st">"customers:page:{page}"</span>;
+    <span class="kw">var</span> cached = <span class="kw">await</span> _cache.<span class="nm">GetStringAsync</span>(key, ct);
+    <span class="kw">if</span> (cached <span class="kw">is not null</span>)
+        <span class="kw">return</span> <span class="ty">JsonSerializer</span>.<span class="nm">Deserialize</span>&lt;<span class="ty">List</span>&lt;<span class="ty">CustomerVm</span>&gt;&gt;(cached)!; <span class="cmt">// hit</span>
+
+    <span class="kw">var</span> data = <span class="kw">await</span> <span class="nm">QueryFromDbAsync</span>(page, ct);            <span class="cmt">// miss → DB</span>
+    <span class="kw">await</span> _cache.<span class="nm">SetStringAsync</span>(key,
+        <span class="ty">JsonSerializer</span>.<span class="nm">Serialize</span>(data),
+        <span class="kw">new</span>() { AbsoluteExpirationRelativeToNow = <span class="ty">TimeSpan</span>.<span class="nm">FromMinutes</span>(<span class="nm">2</span>) }, ct);
+    <span class="kw">return</span> data;
+}</div>
+
+  <div class="callout callout-purple">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-body">
+      <strong>Order of operations matters:</strong> caching a slow, broken query just serves wrong data faster.
+      Make it <em>correct</em>, then <em>efficient</em> (query + indexes + pagination), then <em>cached</em>, then
+      <em>scaled</em>. Always measure with load tests before and after.
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>
+  .NET Senior Engineering Guide &nbsp;·&nbsp; Concepts, Interview Q&amp;A &amp; Real Debugging &nbsp;·&nbsp;
+  <a href="index.html">← Back to AI Architecture Guide</a>
+</footer>
+
+<script>
+  // Back-to-top visibility
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.classList.toggle('visible', window.scrollY > 600);
+  });
+</script>
+
+</body>
+</html>
